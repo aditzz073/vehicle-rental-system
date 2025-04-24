@@ -25,7 +25,10 @@ app.use(session({
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Authentication middleware
+// Serve views directory for layout components
+app.use('/views', express.static(path.join(__dirname, 'views')));
+
+// Authentication middleware functions
 const isAuthenticated = (req, res, next) => {
   if (req.session && req.session.user) {
     return next();
