@@ -1,0 +1,154 @@
+/* Global Styles */
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2c3e50;
+  --accent-color: #e74c3c;
+  --light-color: #ecf0f1;
+  --dark-color: #2c3e50;
+  --success-color: #2ecc71;
+  --warning-color: #f39c12;
+  --danger-color: #e74c3c;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f8f9fa;
+}
+
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(to right, var(--secondary-color), var(--primary-color));
+  padding: 80px 0;
+  border-radius: 0 0 10px 10px;
+  margin-bottom: 40px;
+}
+
+/* Card styles */
+.card {
+  border: none;
+  border-radius: 8px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Vehicle cards */
+.vehicle-card {
+  height: 100%;
+  overflow: hidden;
+}
+
+.vehicle-card .card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+.vehicle-card .rating {
+  color: var(--warning-color);
+}
+
+.vehicle-card .vehicle-price {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+/* Rental card */
+.rental-card {
+  margin-bottom: 20px;
+}
+
+.rental-card .status-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+/* Avatar placeholder */
+.avatar-placeholder {
+  background-color: var(--light-color);
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  color: var(--primary-color);
+}
+
+/* Star rating */
+.rating {
+  color: var(--warning-color);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.rating .fas,
+.rating .far {
+  margin-right: 5px;
+}
+
+/* Forms */
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+  border-color: #2980b9;
+}
+
+/* Footer */
+footer {
+  background-color: var(--dark-color);
+  color: white;
+  padding: 30px 0;
+  margin-top: 50px;
+}
+
+footer a {
+  text-decoration: none;
+}
+
+/* Vehicle details modal */
+#vehicle-gallery img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero-section {
+    text-align: center;
+    padding: 40px 0;
+  }
+  
+  .hero-section img {
+    margin-top: 30px;
+  }
+  
+  .vehicle-card .card-img-top {
+    height: 150px;
+  }
+}
