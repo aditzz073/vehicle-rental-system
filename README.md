@@ -1,5 +1,11 @@
 # AutoHive - Vehicle Rental System
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-v14+-green.svg)](https://nodejs.org/)
+[![Express.js](https://img.shields.io/badge/Express.js-4.x-blue.svg)](https://expressjs.com/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-orange.svg)](https://www.mysql.com/)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-purple.svg)](https://getbootstrap.com/)
+
 AutoHive is a modern, full-featured vehicle rental platform built with Node.js and Express that allows users to browse, book, and manage vehicle rentals. The application provides a seamless user experience with features like user authentication, vehicle browsing, booking management, and administrative controls.
 
 ## Table of Contents
