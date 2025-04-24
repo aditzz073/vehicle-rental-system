@@ -44,48 +44,43 @@ function checkAuthStatus() {
  * @param {Object} user - The user object
  */
 function updateNavForAuthenticatedUser(user) {
+  // Hide auth buttons
+  const authButtons = document.getElementById('auth-buttons');
+  if (authButtons) {
+    authButtons.classList.add('d-none');
+  }
+  
+  // Show user nav
   const userNav = document.getElementById('user-nav');
   if (!userNav) return;
   
-  userNav.innerHTML = `
-    <li class="nav-item dropdown">
-      <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <span class="me-1">${user.username}</span>
-        <i class="fas fa-user-circle"></i>
-      </a>
-      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-        <li><a class="dropdown-item" href="/dashboard">Dashboard</a></li>
-        <li><a class="dropdown-item" href="/dashboard#rentals">My Rentals</a></li>
-        <li><a class="dropdown-item" href="/dashboard#profile">Profile</a></li>
-        ${user.is_admin ? '<li><a class="dropdown-item" href="/admin">Admin Panel</a></li>' : ''}
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="#" id="logout-link">Logout</a></li>
-      </ul>
-    </li>
-  `;
+  userNav.classList.remove('d-none');
   
   // Add event listener for logout
-  document.getElementById('logout-link').addEventListener('click', function(e) {
-    e.preventDefault();
-    logout();
-  });
+  const logoutButton = document.getElementById('nav-logout-button');
+  if (logoutButton) {
+    logoutButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      logout();
+    });
+  }
 }
 
 /**
  * Update the navigation for a guest user
  */
 function updateNavForGuestUser() {
-  const userNav = document.getElementById('user-nav');
-  if (!userNav) return;
+  // Show auth buttons
+  const authButtons = document.getElementById('auth-buttons');
+  if (authButtons) {
+    authButtons.classList.remove('d-none');
+  }
   
-  userNav.innerHTML = `
-    <li class="nav-item">
-      <a class="nav-link" href="/login">Login</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="/register">Register</a>
-    </li>
-  `;
+  // Hide user nav
+  const userNav = document.getElementById('user-nav');
+  if (userNav) {
+    userNav.classList.add('d-none');
+  }
 }
 
 /**
