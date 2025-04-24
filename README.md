@@ -84,8 +84,8 @@ AutoHive is a modern, full-featured vehicle rental platform built with Node.js a
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/autohive.git
-cd autohive
+git clone https://github.com/aditzz073/vehicle-rental-system.git
+cd vehicle-rental-system
 ```
 
 2. Install dependencies
@@ -93,17 +93,17 @@ cd autohive
 npm install
 ```
 
-3. Set up the database
+3. Set up the environment variables
 ```bash
-# Create database and tables
-mysql -u root -p < config/schema.sql
+# Copy the example environment file
+cp .env.example .env
+# Edit the .env file with your actual configuration
 ```
 
-4. Configure environment variables
+4. Set up the database
 ```bash
-# Create a .env file in the root directory
-cp .env.example .env
-# Update the file with your database credentials and other settings
+# Create database and tables using the schema
+mysql -u your_username -p < config/schema.sql
 ```
 
 5. Start the server
@@ -115,7 +115,7 @@ npm run dev
 
 ## Configuration
 
-Create a `.env` file in the root directory with the following configurations:
+Create a `.env` file in the root directory with the following configurations (see `.env.example` for reference):
 
 ```
 # Server Configuration
@@ -130,8 +130,15 @@ DB_NAME=vehicle_rental
 DB_PORT=3306
 
 # Session Configuration
-SESSION_SECRET=your_secret_key
+SESSION_SECRET=your_session_secret
 ```
+
+## Security Notice
+
+This repository is public. Please ensure:
+- You never commit sensitive information (API keys, passwords, etc.)
+- Always use environment variables for sensitive values
+- The .env file is in .gitignore and should never be committed
 
 ## Usage
 
