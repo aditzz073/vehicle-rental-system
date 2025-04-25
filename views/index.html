@@ -20,8 +20,7 @@
           <h1 class="display-4">Find Your Perfect Ride</h1>
           <p class="lead">Rent premium vehicles for your journey with our easy booking system.</p>
           <div class="mt-4">
-            <a href="/vehicles" class="btn btn-primary btn-lg me-2">Browse Vehicles</a>
-            <a href="/register" class="btn btn-outline-light btn-lg">Register Now</a>
+            <a href="/vehicles-list" class="btn btn-primary btn-lg">Browse Vehicles</a>
           </div>
         </div>
         <div class="col-md-6">
@@ -88,15 +87,81 @@
     </div>
   </section>
 
-  <!-- Testimonials Section -->
+  <!-- Testimonials Section with Static Reviews -->
   <section class="py-5">
     <div class="container">
       <h2 class="text-center mb-5">What Our Customers Say</h2>
       <div class="row testimonials">
-        <!-- Testimonials will be loaded dynamically via JavaScript -->
-        <div class="text-center">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+        <!-- Static Testimonials -->
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <div class="mb-3">
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+              </div>
+              <p class="card-text">"I rented the BMW 7 Series for my daughter's wedding. The car was immaculate and the service was exceptional. Will definitely recommend AutoHive to friends and family!"</p>
+              <div class="d-flex align-items-center mt-3">
+                <div class="avatar me-3">
+                  <i class="fas fa-user-circle fa-2x text-primary"></i>
+                </div>
+                <div>
+                  <h6 class="mb-0">Rajesh Sharma</h6>
+                  <small class="text-muted">April 12, 2025</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <div class="mb-3">
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star-half-alt text-warning"></i>
+              </div>
+              <p class="card-text">"The Range Rover SV Autobiography was perfect for our family trip to Lonavala. Spacious, comfortable and the pickup/drop service was seamless. The kids loved it and so did we!"</p>
+              <div class="d-flex align-items-center mt-3">
+                <div class="avatar me-3">
+                  <i class="fas fa-user-circle fa-2x text-primary"></i>
+                </div>
+                <div>
+                  <h6 class="mb-0">Priya Patel</h6>
+                  <small class="text-muted">March 28, 2025</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <div class="mb-3">
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+              </div>
+              <p class="card-text">"I rented the Porsche 911 for a weekend getaway and it exceeded all expectations! The booking process was simple, the car was in pristine condition, and the driving experience was unforgettable."</p>
+              <div class="d-flex align-items-center mt-3">
+                <div class="avatar me-3">
+                  <i class="fas fa-user-circle fa-2x text-primary"></i>
+                </div>
+                <div>
+                  <h6 class="mb-0">Vikram Singh</h6>
+                  <small class="text-muted">April 5, 2025</small>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -109,8 +174,7 @@
       <h2 class="mb-3">Ready to Get Started?</h2>
       <p class="lead mb-4">Join thousands of satisfied customers who trust our vehicle rental service.</p>
       <div>
-        <a href="/register" class="btn btn-light btn-lg me-2">Sign Up Now</a>
-        <a href="/vehicles" class="btn btn-outline-light btn-lg">Browse Vehicles</a>
+        <a href="/vehicles-list" class="btn btn-light btn-lg">Browse Vehicles</a>
       </div>
     </div>
   </section>
@@ -122,6 +186,5 @@
   <!-- Main Scripts -->
   <script src="/js/layout.js"></script>
   <script src="/js/main.js"></script>
-  <script src="/js/home.js"></script>
 </body>
 </html>

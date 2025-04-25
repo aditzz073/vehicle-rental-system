@@ -35,7 +35,7 @@ class Vehicle {
     try {
       const { 
         make, model, year, registration_number, color, 
-        mileage, vehicle_type, daily_rate, image_url, description,
+        mileage, vehicle_type, category, daily_rate, image_url, description,
         location_city, location_state, location_zip, location_address,
         location_latitude, location_longitude
       } = vehicleData;
@@ -43,17 +43,30 @@ class Vehicle {
       const [result] = await db.execute(
         `INSERT INTO vehicles 
          (make, model, year, registration_number, color, mileage, vehicle_type, 
-         daily_rate, image_url, description, 
+         category, daily_rate, image_url, description, 
          location_city, location_state, location_zip, location_address, 
          location_latitude, location_longitude) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           make, model, year, registration_number, color || null, 
-          mileage || null, vehicle_type, daily_rate, image_url || null, description || null,
+          mileage || null, vehicle_type, category || 'Standard', daily_rate, 
+          image_url || null, description || null,
           location_city || null, location_state || null, location_zip || null, 
           location_address || null, location_latitude || null, location_longitude || null
         ]
       );
+      
+      // If pricing tiers are provided, add them
+      if (vehicleData.pricing_tiers && vehicleData.pricing_tiers.length > 0) {
+        await Promise.all(vehicleData.pricing_tiers.map(tier => {
+          return db.execute(
+            `INSERT INTO vehicle_pricing_tiers 
+            (vehicle_id, min_days, max_days, rate_multiplier) 
+            VALUES (?, ?, ?, ?)`,
+            [result.insertId, tier.min_days, tier.max_days, tier.rate_multiplier]
+          );
+        }));
+      }
       
       return { vehicleId: result.insertId, ...vehicleData };
     } catch (error) {
@@ -66,7 +79,7 @@ class Vehicle {
     try {
       const { 
         make, model, year, registration_number, color, 
-        mileage, vehicle_type, daily_rate, is_available, image_url, description,
+        mileage, vehicle_type, category, daily_rate, is_available, image_url, description,
         location_city, location_state, location_zip, location_address,
         location_latitude, location_longitude
       } = vehicleData;
@@ -74,14 +87,14 @@ class Vehicle {
       const [result] = await db.execute(
         `UPDATE vehicles SET 
          make = ?, model = ?, year = ?, registration_number = ?, color = ?, 
-         mileage = ?, vehicle_type = ?, daily_rate = ?, is_available = ?, 
+         mileage = ?, vehicle_type = ?, category = ?, daily_rate = ?, is_available = ?, 
          image_url = ?, description = ?,
          location_city = ?, location_state = ?, location_zip = ?, location_address = ?,
          location_latitude = ?, location_longitude = ?
          WHERE vehicle_id = ?`,
         [
           make, model, year, registration_number, color || null, 
-          mileage || null, vehicle_type, daily_rate, 
+          mileage || null, vehicle_type, category || 'Standard', daily_rate, 
           is_available !== undefined ? is_available : true, 
           image_url || null, description || null,
           location_city || null, location_state || null, location_zip || null, 
@@ -89,6 +102,22 @@ class Vehicle {
           vehicleId
         ]
       );
+      
+      // Update pricing tiers if provided
+      if (vehicleData.pricing_tiers && vehicleData.pricing_tiers.length > 0) {
+        // Clear existing tiers first
+        await db.execute('DELETE FROM vehicle_pricing_tiers WHERE vehicle_id = ?', [vehicleId]);
+        
+        // Add new tiers
+        await Promise.all(vehicleData.pricing_tiers.map(tier => {
+          return db.execute(
+            `INSERT INTO vehicle_pricing_tiers 
+            (vehicle_id, min_days, max_days, rate_multiplier) 
+            VALUES (?, ?, ?, ?)`,
+            [vehicleId, tier.min_days, tier.max_days, tier.rate_multiplier]
+          );
+        }));
+      }
       
       return result.affectedRows > 0;
     } catch (error) {
@@ -125,19 +154,31 @@ class Vehicle {
       let query = 'SELECT * FROM vehicles WHERE 1=1';
       const params = [];
       
-      if (criteria.make) {
-        query += ' AND make LIKE ?';
-        params.push(`%${criteria.make}%`);
-      }
-      
-      if (criteria.model) {
-        query += ' AND model LIKE ?';
-        params.push(`%${criteria.model}%`);
+      // Handle generic search parameter (search across make, model, and description)
+      if (criteria.search) {
+        query += ' AND (make LIKE ? OR model LIKE ? OR description LIKE ?)';
+        params.push(`%${criteria.search}%`, `%${criteria.search}%`, `%${criteria.search}%`);
+      } else {
+        // Handle specific field searches if no generic search is provided
+        if (criteria.make) {
+          query += ' AND make LIKE ?';
+          params.push(`%${criteria.make}%`);
+        }
+        
+        if (criteria.model) {
+          query += ' AND model LIKE ?';
+          params.push(`%${criteria.model}%`);
+        }
       }
       
       if (criteria.vehicle_type) {
         query += ' AND vehicle_type = ?';
         params.push(criteria.vehicle_type);
+      }
+      
+      if (criteria.category) {
+        query += ' AND category = ?';
+        params.push(criteria.category);
       }
       
       if (criteria.year_min) {
@@ -166,19 +207,9 @@ class Vehicle {
       }
       
       // Location-based search criteria
-      if (criteria.location_city) {
-        query += ' AND location_city = ?';
-        params.push(criteria.location_city);
-      }
-      
-      if (criteria.location_state) {
-        query += ' AND location_state = ?';
-        params.push(criteria.location_state);
-      }
-      
-      if (criteria.location_zip) {
-        query += ' AND location_zip = ?';
-        params.push(criteria.location_zip);
+      if (criteria.location) {
+        query += ' AND (location_city LIKE ? OR location_state LIKE ? OR location_zip LIKE ?)';
+        params.push(`%${criteria.location}%`, `%${criteria.location}%`, `%${criteria.location}%`);
       }
       
       // Search by proximity if lat/long and radius provided
@@ -197,6 +228,50 @@ class Vehicle {
           parseFloat(criteria.latitude),
           parseFloat(criteria.radius)
         );
+      }
+      
+      // Check availability for date range
+      if (criteria.start_date && criteria.end_date) {
+        query += ` AND vehicle_id NOT IN (
+          SELECT vehicle_id FROM rentals 
+          WHERE status NOT IN ('cancelled')
+          AND ((start_date <= ? AND end_date >= ?) OR 
+              (start_date >= ? AND start_date <= ?))
+        )`;
+        params.push(
+          criteria.end_date,
+          criteria.start_date,
+          criteria.start_date,
+          criteria.end_date
+        );
+      }
+      
+      // Add sorting options
+      if (criteria.sort) {
+        switch (criteria.sort) {
+          case 'price_asc':
+            query += ' ORDER BY daily_rate ASC';
+            break;
+          case 'price_desc':
+            query += ' ORDER BY daily_rate DESC';
+            break;
+          case 'name_asc':
+            query += ' ORDER BY make ASC, model ASC';
+            break;
+          case 'name_desc':
+            query += ' ORDER BY make DESC, model DESC';
+            break;
+          case 'year_desc':
+            query += ' ORDER BY year DESC';
+            break;
+          case 'year_asc':
+            query += ' ORDER BY year ASC';
+            break;
+          default:
+            query += ' ORDER BY daily_rate ASC';
+        }
+      } else {
+        query += ' ORDER BY daily_rate ASC';
       }
       
       const [rows] = await db.execute(query, params);
@@ -260,6 +335,83 @@ class Vehicle {
       return rows.map(row => row.vehicle_type);
     } catch (error) {
       console.error('Error getting vehicle types:', error);
+      throw error;
+    }
+  }
+  
+  static async getVehicleCategories() {
+    try {
+      const [rows] = await db.execute('SELECT DISTINCT category FROM vehicles');
+      return rows.map(row => row.category);
+    } catch (error) {
+      console.error('Error getting vehicle categories:', error);
+      throw error;
+    }
+  }
+
+  static async getPricingTiers(vehicleId) {
+    try {
+      const [rows] = await db.execute(
+        'SELECT * FROM vehicle_pricing_tiers WHERE vehicle_id = ? ORDER BY min_days ASC',
+        [vehicleId]
+      );
+      return rows;
+    } catch (error) {
+      console.error('Error getting pricing tiers:', error);
+      throw error;
+    }
+  }
+  
+  static async calculateRentalCost(vehicleId, startDate, endDate) {
+    try {
+      // Get vehicle basic info
+      const [vehicleRows] = await db.execute(
+        'SELECT daily_rate FROM vehicles WHERE vehicle_id = ?',
+        [vehicleId]
+      );
+      
+      if (!vehicleRows.length) {
+        throw new Error('Vehicle not found');
+      }
+      
+      const vehicle = vehicleRows[0];
+      
+      // Calculate rental duration in days
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const durationMs = end - start;
+      const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24)) || 1; // Minimum 1 day
+      
+      // Get applicable pricing tier
+      const [tierRows] = await db.execute(
+        `SELECT rate_multiplier 
+         FROM vehicle_pricing_tiers 
+         WHERE vehicle_id = ? 
+         AND ? BETWEEN min_days AND max_days 
+         ORDER BY min_days ASC 
+         LIMIT 1`,
+        [vehicleId, durationDays]
+      );
+      
+      // Default to standard rate if no tier applies
+      const rateMultiplier = tierRows.length ? tierRows[0].rate_multiplier : 1.0;
+      
+      // Calculate total cost
+      const dailyRate = parseFloat(vehicle.daily_rate);
+      const totalCost = dailyRate * durationDays * rateMultiplier;
+      
+      return {
+        vehicleId,
+        dailyRate,
+        duration: durationDays,
+        rateMultiplier,
+        baseTotal: dailyRate * durationDays,
+        discountedTotal: totalCost,
+        discountAmount: dailyRate * durationDays - totalCost,
+        discountPercentage: ((1 - rateMultiplier) * 100).toFixed(1)
+      };
+    } catch (error) {
+      console.error('Error calculating rental cost:', error);
       throw error;
     }
   }

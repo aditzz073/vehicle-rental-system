@@ -32,24 +32,31 @@
               </select>
             </div>
             <div class="col-md-3 mb-3">
-              <label for="start-date" class="form-label">Start Date</label>
-              <input type="date" class="form-control" id="start-date" name="start_date">
+              <label for="vehicle-category" class="form-label">Category</label>
+              <select class="form-select" id="vehicle-category" name="category">
+                <option value="">All Categories</option>
+                <!-- Vehicle categories will be loaded dynamically -->
+              </select>
             </div>
             <div class="col-md-3 mb-3">
-              <label for="end-date" class="form-label">End Date</label>
-              <input type="date" class="form-control" id="end-date" name="end_date">
+              <label for="start-date" class="form-label">Start Date</label>
+              <input type="date" class="form-control" id="start-date" name="start_date">
             </div>
           </div>
           <div class="row">
             <div class="col-md-3 mb-3">
+              <label for="end-date" class="form-label">End Date</label>
+              <input type="date" class="form-control" id="end-date" name="end_date">
+            </div>
+            <div class="col-md-3 mb-3">
               <label for="price-min" class="form-label">Min Price</label>
-              <input type="number" class="form-control" id="price-min" name="price_min" placeholder="Min Price">
+              <input type="number" class="form-control" id="price-min" name="daily_rate_min" placeholder="Min Price">
             </div>
             <div class="col-md-3 mb-3">
               <label for="price-max" class="form-label">Max Price</label>
-              <input type="number" class="form-control" id="price-max" name="price_max" placeholder="Max Price">
+              <input type="number" class="form-control" id="price-max" name="daily_rate_max" placeholder="Max Price">
             </div>
-            <div class="col-md-6 d-flex align-items-end">
+            <div class="col-md-3 d-flex align-items-end">
               <button type="submit" class="btn btn-primary me-2">
                 <i class="fas fa-search"></i> Search
               </button>
@@ -72,7 +79,8 @@
           <option value="price_desc">Price: High to Low</option>
           <option value="name_asc">Name: A to Z</option>
           <option value="name_desc">Name: Z to A</option>
-          <option value="rating_desc">Rating: High to Low</option>
+          <option value="year_desc">Year: Newest First</option>
+          <option value="year_asc">Year: Oldest First</option>
         </select>
       </div>
     </div>
@@ -123,6 +131,10 @@
                     <td id="modal-type"></td>
                   </tr>
                   <tr>
+                    <th>Category</th>
+                    <td id="modal-category"></td>
+                  </tr>
+                  <tr>
                     <th>Year</th>
                     <td id="modal-year"></td>
                   </tr>
@@ -140,6 +152,16 @@
                   </tr>
                 </tbody>
               </table>
+              
+              <!-- Pricing Tiers Section -->
+              <div class="card mb-4">
+                <div class="card-header bg-light">
+                  <h5 class="mb-0">Rental Pricing</h5>
+                </div>
+                <div class="card-body" id="pricing-tiers">
+                  <!-- Pricing tiers will be loaded dynamically -->
+                </div>
+              </div>
               
               <div id="booking-section">
                 <h4>Book This Vehicle</h4>

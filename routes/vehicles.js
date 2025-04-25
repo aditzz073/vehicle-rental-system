@@ -1,24 +1,33 @@
 const express = require('express');
 const router = express.Router();
 const vehicleController = require('../controllers/vehicleController');
-const authController = require('../controllers/authController');
+const { authenticateJWT, isAdmin } = require('../middlewares/authMiddleware');
 
-// Public vehicle routes
-router.get('/', vehicleController.getAllVehicles);
-router.get('/available', vehicleController.getAvailableVehicles);
-router.get('/types', vehicleController.getVehicleTypes);
+// Public routes
 router.get('/search', vehicleController.searchVehicles);
-router.get('/locations/cities', vehicleController.getAvailableCities);
-router.get('/locations/states', vehicleController.getAvailableStates);
-router.get('/location', vehicleController.getVehiclesByLocation);
+router.get('/types', vehicleController.getVehicleTypes);
+router.get('/categories', vehicleController.getVehicleCategories);
 router.get('/:id', vehicleController.getVehicleById);
-router.get('/:id/reviews', vehicleController.getVehicleReviews);
-router.get('/:id/availability', vehicleController.checkAvailability);
+router.get('/:id/pricing-tiers', vehicleController.getVehiclePricingTiers);
+router.get('/available/all', vehicleController.getAvailableVehicles);
+router.get('/available/cities', vehicleController.getAvailableCities);
+router.get('/available/states', vehicleController.getAvailableStates);
 
-// Protected/Admin routes
-router.post('/', authController.isAuthenticated, authController.isAdmin, vehicleController.createVehicle);
-router.put('/:id', authController.isAuthenticated, authController.isAdmin, vehicleController.updateVehicle);
-router.delete('/:id', authController.isAuthenticated, authController.isAdmin, vehicleController.deleteVehicle);
-router.put('/:id/availability', authController.isAuthenticated, authController.isAdmin, vehicleController.updateAvailability);
+// Calculate rental cost without requiring authentication
+router.get('/calculate-rental', vehicleController.calculateRentalCost);
+router.post('/calculate-rental', vehicleController.calculateRentalCost);
+
+// Check availability without requiring authentication
+router.get('/check-availability', vehicleController.checkAvailability);
+router.post('/check-availability', vehicleController.checkAvailability);
+
+// Protected routes - require authentication
+router.get('/', authenticateJWT, vehicleController.getAllVehicles);
+
+// Admin-only routes
+router.post('/', authenticateJWT, isAdmin, vehicleController.createVehicle);
+router.put('/:id', authenticateJWT, isAdmin, vehicleController.updateVehicle);
+router.delete('/:id', authenticateJWT, isAdmin, vehicleController.deleteVehicle);
+router.patch('/:id/availability', authenticateJWT, isAdmin, vehicleController.updateAvailability);
 
 module.exports = router;

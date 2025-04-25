@@ -54,6 +54,11 @@ app.use('/vehicles', vehicleRoutes);
 app.use('/rentals', rentalRoutes);
 app.use('/admin', adminRoutes);
 
+// Redirect /vehicles to /vehicles-list for the vehicles page
+app.get('/vehicles', (req, res) => {
+  res.redirect('/vehicles-list');
+});
+
 // Home route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));

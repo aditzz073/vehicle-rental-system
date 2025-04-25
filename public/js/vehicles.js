@@ -9,6 +9,7 @@ let totalPages = 1;
 let pageSize = 9;
 let vehicles = [];
 let vehicleTypes = [];
+let vehicleCategories = [];
 let sortBy = 'price_asc';
 let searchCriteria = {};
 
@@ -20,8 +21,9 @@ document.addEventListener('DOMContentLoaded', function() {
  * Initialize the vehicles page
  */
 function initVehiclesPage() {
-  // Load vehicle types for filter dropdown
+  // Load vehicle types and categories for filter dropdowns
   loadVehicleTypes();
+  loadVehicleCategories();
   
   // Set today's date as the minimum for date inputs
   setMinDates();
@@ -37,23 +39,49 @@ function initVehiclesPage() {
  * Load vehicle types for the filter dropdown
  */
 function loadVehicleTypes() {
-  fetch('/api/vehicles/types')
+  fetch('/vehicles/types')
     .then(response => response.json())
     .then(types => {
       vehicleTypes = types;
       const dropdown = document.getElementById('vehicle-type');
       
       if (dropdown) {
+        dropdown.innerHTML = '<option value="">All Types</option>';
         types.forEach(type => {
           const option = document.createElement('option');
-          option.value = type.type_id || type.name;
-          option.textContent = type.name;
+          option.value = type;
+          option.textContent = type;
           dropdown.appendChild(option);
         });
       }
     })
     .catch(error => {
       console.error('Error loading vehicle types:', error);
+    });
+}
+
+/**
+ * Load vehicle categories for the filter dropdown
+ */
+function loadVehicleCategories() {
+  fetch('/vehicles/categories')
+    .then(response => response.json())
+    .then(categories => {
+      vehicleCategories = categories;
+      const dropdown = document.getElementById('vehicle-category');
+      
+      if (dropdown) {
+        dropdown.innerHTML = '<option value="">All Categories</option>';
+        categories.forEach(category => {
+          const option = document.createElement('option');
+          option.value = category;
+          option.textContent = category;
+          dropdown.appendChild(option);
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error loading vehicle categories:', error);
     });
 }
 
@@ -123,6 +151,20 @@ function addVehiclePageEventListeners() {
     calculateCostButton.addEventListener('click', calculateRentalCost);
   }
   
+  // Date change listeners for automatic cost calculation
+  const modalStartDate = document.getElementById('modal-start-date');
+  const modalEndDate = document.getElementById('modal-end-date');
+  
+  if (modalStartDate && modalEndDate) {
+    modalStartDate.addEventListener('change', function() {
+      if (modalEndDate.value) calculateRentalCost();
+    });
+    
+    modalEndDate.addEventListener('change', function() {
+      if (modalStartDate.value) calculateRentalCost();
+    });
+  }
+  
   // Booking form
   const bookingForm = document.getElementById('booking-form');
   if (bookingForm) {
@@ -139,7 +181,36 @@ function loadVehicles() {
   
   // Add search criteria
   Object.entries(searchCriteria).forEach(([key, value]) => {
-    if (value) queryParams.append(key, value);
+    if (!value) return; // Skip empty values
+    
+    // Map form field names to API parameter names
+    switch(key) {
+      case 'search':
+        queryParams.append('search', value);
+        break;
+      case 'vehicle_type':
+        queryParams.append('vehicle_type', value);
+        break;
+      case 'category':
+        queryParams.append('category', value);
+        break;
+      case 'start_date':
+        queryParams.append('start_date', value);
+        break;
+      case 'end_date':
+        queryParams.append('end_date', value);
+        break;
+      case 'price_min':
+      case 'daily_rate_min': // Handle both possible names
+        queryParams.append('daily_rate_min', value);
+        break;
+      case 'price_max':
+      case 'daily_rate_max': // Handle both possible names
+        queryParams.append('daily_rate_max', value);
+        break;
+      default:
+        queryParams.append(key, value);
+    }
   });
   
   // Add pagination
@@ -159,7 +230,7 @@ function loadVehicles() {
   `;
   
   // Fetch vehicles
-  fetch(`/api/vehicles/search?${queryParams.toString()}`)
+  fetch(`/vehicles/search?${queryParams.toString()}`)
     .then(response => response.json())
     .then(data => {
       vehicles = data.vehicles || [];
@@ -207,11 +278,15 @@ function renderVehicles(vehicles) {
   vehicles.forEach(vehicle => {
     const vehicleImageUrl = vehicle.image_url || '/images/default-vehicle.jpg';
     const rating = vehicle.rating_stats ? vehicle.rating_stats.average_rating : 0;
+    const categoryBadge = getCategoryBadgeHtml(vehicle.category);
     
     html += `
       <div class="col">
         <div class="card vehicle-card shadow-sm h-100">
-          <img src="${vehicleImageUrl}" class="card-img-top" alt="${vehicle.make} ${vehicle.model}">
+          <div class="position-relative">
+            <img src="${vehicleImageUrl}" class="card-img-top" alt="${vehicle.make} ${vehicle.model}">
+            ${categoryBadge}
+          </div>
           <div class="card-body">
             <h5 class="card-title">${vehicle.make} ${vehicle.model} (${vehicle.year})</h5>
             <div class="mb-2">
@@ -221,7 +296,10 @@ function renderVehicles(vehicles) {
               <i class="fas fa-car me-1"></i> ${vehicle.vehicle_type}<br>
               <i class="fas fa-palette me-1"></i> ${vehicle.color}
             </p>
-            <p class="vehicle-price">${formatCurrency(vehicle.daily_rate)}/day</p>
+            <p class="vehicle-price">
+              ${formatCurrency(vehicle.daily_rate)}/day
+              <small class="text-success d-block">Save up to 25% on longer rentals</small>
+            </p>
           </div>
           <div class="card-footer bg-white border-top-0">
             <div class="d-grid">
@@ -236,6 +314,31 @@ function renderVehicles(vehicles) {
   });
   
   container.innerHTML = html;
+}
+
+/**
+ * Generate HTML for category badge
+ * @param {string} category - Vehicle category
+ * @returns {string} - HTML for badge
+ */
+function getCategoryBadgeHtml(category) {
+  if (!category) return '';
+  
+  let badgeClass = 'bg-secondary';
+  
+  switch(category) {
+    case 'Standard':
+      badgeClass = 'bg-secondary';
+      break;
+    case 'Premium':
+      badgeClass = 'bg-primary';
+      break;
+    case 'Ultra Luxury':
+      badgeClass = 'bg-danger';
+      break;
+  }
+  
+  return `<span class="position-absolute top-0 end-0 badge ${badgeClass} m-2">${category}</span>`;
 }
 
 /**
@@ -317,9 +420,16 @@ function openVehicleModal(vehicleId) {
   document.getElementById('modal-type').textContent = vehicle.vehicle_type;
   document.getElementById('modal-year').textContent = vehicle.year;
   document.getElementById('modal-color').textContent = vehicle.color;
-  document.getElementById('modal-mileage').textContent = `${vehicle.mileage} miles`;
-  document.getElementById('modal-rate').textContent = formatCurrency(vehicle.daily_rate) + '/day';
+  document.getElementById('modal-mileage').textContent = `${vehicle.mileage || 0} km`;
+  document.getElementById('modal-rate').innerHTML = `
+    ${formatCurrency(vehicle.daily_rate)}/day
+    <span class="badge bg-success ms-2">Discounts available for longer rentals</span>
+  `;
+  document.getElementById('modal-category').textContent = vehicle.category || 'Standard';
   document.getElementById('modal-rating').innerHTML = generateStarRating(vehicle.rating_stats ? vehicle.rating_stats.average_rating : 0);
+  
+  // Load pricing tiers
+  loadVehiclePricingTiers(vehicleId);
   
   // Set vehicle ID for booking form
   document.getElementById('vehicle-id').value = vehicle.vehicle_id;
@@ -332,6 +442,76 @@ function openVehicleModal(vehicleId) {
   
   // Show the modal
   modal.show();
+}
+
+/**
+ * Load pricing tiers for a specific vehicle
+ * @param {number} vehicleId - The ID of the vehicle
+ */
+function loadVehiclePricingTiers(vehicleId) {
+  const tiersContainer = document.getElementById('pricing-tiers');
+  if (!tiersContainer) return;
+  
+  tiersContainer.innerHTML = `
+    <div class="text-center">
+      <div class="spinner-border spinner-border-sm text-primary" role="status">
+        <span class="visually-hidden">Loading pricing tiers...</span>
+      </div>
+      Loading pricing options...
+    </div>
+  `;
+  
+  fetch(`/vehicles/${vehicleId}/pricing-tiers`)
+    .then(response => response.json())
+    .then(tiers => {
+      if (!tiers || tiers.length === 0) {
+        tiersContainer.innerHTML = '<p>Standard daily rate applies to all rental durations.</p>';
+        return;
+      }
+      
+      let html = `
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered">
+            <thead>
+              <tr>
+                <th>Rental Duration</th>
+                <th>Rate</th>
+                <th>Discount</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      tiers.forEach(tier => {
+        const discountPercent = ((1 - tier.rate_multiplier) * 100).toFixed(0);
+        const durationText = tier.min_days === tier.max_days 
+          ? `${tier.min_days} days` 
+          : tier.max_days < 365 
+            ? `${tier.min_days}-${tier.max_days} days`
+            : `${tier.min_days}+ days`;
+            
+        html += `
+          <tr>
+            <td>${durationText}</td>
+            <td>${tier.rate_multiplier * 100}% of daily rate</td>
+            <td>${discountPercent > 0 ? `-${discountPercent}%` : 'None'}</td>
+          </tr>
+        `;
+      });
+      
+      html += `
+            </tbody>
+          </table>
+        </div>
+        <p class="small text-muted mb-0">Rent for longer periods to enjoy better rates!</p>
+      `;
+      
+      tiersContainer.innerHTML = html;
+    })
+    .catch(error => {
+      console.error('Error loading pricing tiers:', error);
+      tiersContainer.innerHTML = '<p class="text-danger">Failed to load pricing information.</p>';
+    });
 }
 
 /**
@@ -349,7 +529,7 @@ function loadVehicleReviews(vehicleId) {
     </div>
   `;
   
-  fetch(`/api/vehicles/${vehicleId}/reviews`)
+  fetch(`/vehicles/${vehicleId}/reviews`)
     .then(response => response.json())
     .then(reviews => {
       if (!reviews || reviews.length === 0) {
@@ -407,20 +587,31 @@ function calculateRentalCost() {
   costContainer.className = 'alert alert-info';
   costContainer.classList.remove('d-none');
   
-  fetch('/api/rentals/calculate', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ vehicle_id: vehicleId, start_date: startDate, end_date: endDate }),
-  })
+  fetch(`/rentals/calculate?vehicle_id=${vehicleId}&start_date=${startDate}&end_date=${endDate}`)
     .then(response => response.json())
     .then(data => {
+      let discountHtml = '';
+      
+      // Show discount information if applicable
+      if (data.discountPercentage && data.discountPercentage > 0) {
+        discountHtml = `
+          <div class="text-success mt-2">
+            <strong>Discount:</strong> ${data.discountPercentage}% off (Saved ${formatCurrency(data.discountAmount)})
+          </div>
+        `;
+      }
+      
       costContainer.innerHTML = `
-        <strong>Rental Period:</strong> ${formatDate(startDate)} - ${formatDate(endDate)}<br>
-        <strong>Days:</strong> ${data.days}<br>
-        <strong>Daily Rate:</strong> ${formatCurrency(data.daily_rate)}<br>
-        <strong>Total Cost:</strong> ${formatCurrency(data.total_cost)}
+        <div>
+          <strong>Rental Period:</strong> ${formatDate(startDate)} - ${formatDate(endDate)}<br>
+          <strong>Duration:</strong> ${data.duration} day${data.duration !== 1 ? 's' : ''}<br>
+          <strong>Daily Rate:</strong> ${formatCurrency(data.dailyRate)}<br>
+          <strong>Base Total:</strong> ${formatCurrency(data.baseTotal)}
+          ${discountHtml}
+          <div class="mt-2 pt-2 border-top">
+            <strong>Final Total:</strong> <span class="fs-5">${formatCurrency(data.discountedTotal)}</span>
+          </div>
+        </div>
       `;
       costContainer.className = 'alert alert-info';
     })
@@ -439,7 +630,7 @@ function handleBookingSubmission(e) {
   e.preventDefault();
   
   // Check if user is logged in
-  fetch('/api/auth/profile')
+  fetch('/auth/profile')
     .then(response => {
       if (!response.ok) {
         throw new Error('Please log in to book a vehicle');
@@ -458,7 +649,7 @@ function handleBookingSubmission(e) {
       }
       
       // Create rental
-      fetch('/api/rentals', {
+      fetch('/rentals', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -484,4 +675,65 @@ function handleBookingSubmission(e) {
     .catch(error => {
       window.location.href = `/login?redirectTo=${encodeURIComponent(window.location.pathname)}`;
     });
+}
+
+/**
+ * Format a number as currency
+ * @param {number} amount - The amount to format
+ * @returns {string} - Formatted currency string
+ */
+function formatCurrency(amount) {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+}
+
+/**
+ * Format a date string as a readable date
+ * @param {string} dateString - The date string to format (YYYY-MM-DD)
+ * @returns {string} - Formatted date string
+ */
+function formatDate(dateString) {
+  if (!dateString) return '';
+  
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString('en-IN', options);
+}
+
+/**
+ * Generate HTML for star rating
+ * @param {number} rating - The rating value (0-5)
+ * @returns {string} - HTML for star rating
+ */
+function generateStarRating(rating) {
+  if (!rating) rating = 0;
+  
+  const fullStars = Math.floor(rating);
+  const halfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+  
+  let html = '';
+  
+  // Full stars
+  for (let i = 0; i < fullStars; i++) {
+    html += '<i class="fas fa-star text-warning"></i> ';
+  }
+  
+  // Half star
+  if (halfStar) {
+    html += '<i class="fas fa-star-half-alt text-warning"></i> ';
+  }
+  
+  // Empty stars
+  for (let i = 0; i < emptyStars; i++) {
+    html += '<i class="far fa-star text-warning"></i> ';
+  }
+  
+  // Add rating number
+  html += `<small class="text-muted ms-1">(${rating.toFixed(1)})</small>`;
+  
+  return html;
 }
