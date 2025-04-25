@@ -59,6 +59,21 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
+// About page route
+app.get('/about', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'about.html'));
+});
+
+// Contact page route
+app.get('/contact', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'contact.html'));
+});
+
+// Terms and Conditions page route
+app.get('/terms', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'terms.html'));
+});
+
 // Authentication page routes
 app.get('/register', (req, res) => {
   // If already logged in, redirect to dashboard

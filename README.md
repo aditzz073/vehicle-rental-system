@@ -203,7 +203,6 @@ This repository is public. Please ensure:
 
 ## Upcoming Features
 
-- **Mobile Application**: Native mobile apps for iOS and Android platforms
 - **Advanced Filtering**: More filtering options for vehicle search
 - **Instant Messaging**: Direct messaging between users and customer support
 - **Payment Integration**: Multiple payment options including PayPal, Stripe, etc.

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us - AutoHive</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <!-- Header will be loaded from layout -->
+
+  <!-- Contact Section -->
+  <section class="py-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 mx-auto">
+          <h1 class="text-center mb-5">Contact Us</h1>
+          
+          <div class="row mb-5">
+            <div class="col-md-6 mb-4 mb-md-0">
+              <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                  <h3 class="mb-4">Get In Touch</h3>
+                  <ul class="list-unstyled">
+                    <li class="mb-3">
+                      <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                      Dayananda Sagar College of Engineering, 560078
+                    </li>
+                    <li class="mb-3">
+                      <i class="fas fa-phone me-2 text-primary"></i>
+                      7204318980
+                    </li>
+                    <li class="mb-3">
+                      <i class="fas fa-envelope me-2 text-primary"></i>
+                      info.autohive@gmail.com
+                    </li>
+                    <li class="mb-3">
+                      <i class="fas fa-clock me-2 text-primary"></i>
+                      Monday - Friday: 9:00 AM - 8:00 PM<br>
+                      Saturday - Sunday: 10:00 AM - 6:00 PM
+                    </li>
+                  </ul>
+                  <h4 class="mt-4 mb-3">Connect With Us</h4>
+                  <div class="social-icons">
+                    <a href="#" class="me-3 text-primary"><i class="fab fa-facebook-f fa-2x"></i></a>
+                    <a href="#" class="me-3 text-primary"><i class="fab fa-twitter fa-2x"></i></a>
+                    <a href="#" class="me-3 text-primary"><i class="fab fa-instagram fa-2x"></i></a>
+                    <a href="#" class="me-3 text-primary"><i class="fab fa-linkedin-in fa-2x"></i></a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card shadow-sm">
+                <div class="card-body">
+                  <h3 class="mb-4">Send Us a Message</h3>
+                  <form id="contact-form">
+                    <div class="mb-3">
+                      <label for="name" class="form-label">Your Name</label>
+                      <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="email" class="form-label">Email Address</label>
+                      <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="subject" class="form-label">Subject</label>
+                      <input type="text" class="form-control" id="subject" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="message" class="form-label">Message</label>
+                      <textarea class="form-control" id="message" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-5">
+            <h3 class="mb-4">Frequently Asked Questions</h3>
+            <div class="accordion" id="contactFAQ">
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                  <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                    What documents do I need to rent a vehicle?
+                  </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#contactFAQ">
+                  <div class="accordion-body">
+                    You will need a valid driver's license, a credit or debit card for payment, and proof of insurance. International customers may need to provide additional documentation.
+                  </div>
+                </div>
+              </div>
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                    How can I cancel or modify my reservation?
+                  </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#contactFAQ">
+                  <div class="accordion-body">
+                    You can cancel or modify your reservation through your account dashboard, or by contacting our customer service team via phone or email at least 24 hours before your scheduled pickup time.
+                  </div>
+                </div>
+              </div>
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingThree">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                    What is your fuel policy?
+                  </button>
+                </h2>
+                <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#contactFAQ">
+                  <div class="accordion-body">
+                    Our vehicles are provided with a full tank of fuel, and we expect them to be returned in the same condition. If the vehicle is not returned with a full tank, a refueling fee will be applied.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h3 class="mb-4">Our Location</h3>
+            <div class="ratio ratio-16x9">
+              <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.6175207320857!2d-73.9857176846356!3d40.748440179328206!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259a9b3117469%3A0xd134e199a405a163!2sEmpire%20State%20Building!5e0!3m2!1sen!2sus!4v1619528762156!5m2!1sen!2sus" 
+                allowfullscreen="" loading="lazy" class="border-0 shadow-sm rounded"></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer will be loaded from layout -->
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Main Scripts -->
+  <script src="/js/layout.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    // Contact form handling
+    document.getElementById('contact-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      // In a real application, you would send this data to your server
+      alert('Thank you for your message! We will get back to you soon.');
+      this.reset();
+    });
+  </script>
+</body>
+</html>

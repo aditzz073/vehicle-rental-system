@@ -1,4 +1,3 @@
-// filepath: /Users/aditya/Documents/vehicle_rental/routes/vehicles.js
 const express = require('express');
 const router = express.Router();
 const vehicleController = require('../controllers/vehicleController');
@@ -9,6 +8,9 @@ router.get('/', vehicleController.getAllVehicles);
 router.get('/available', vehicleController.getAvailableVehicles);
 router.get('/types', vehicleController.getVehicleTypes);
 router.get('/search', vehicleController.searchVehicles);
+router.get('/locations/cities', vehicleController.getAvailableCities);
+router.get('/locations/states', vehicleController.getAvailableStates);
+router.get('/location', vehicleController.getVehiclesByLocation);
 router.get('/:id', vehicleController.getVehicleById);
 router.get('/:id/reviews', vehicleController.getVehicleReviews);
 router.get('/:id/availability', vehicleController.checkAvailability);

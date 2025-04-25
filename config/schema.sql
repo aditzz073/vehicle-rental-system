@@ -31,6 +31,12 @@ CREATE TABLE IF NOT EXISTS vehicles (
   is_available BOOLEAN DEFAULT TRUE,
   image_url VARCHAR(255),
   description TEXT,
+  location_city VARCHAR(50),
+  location_state VARCHAR(50),
+  location_zip VARCHAR(20),
+  location_address TEXT,
+  location_latitude DECIMAL(10, 8),
+  location_longitude DECIMAL(11, 8),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

@@ -35,16 +35,23 @@ class Vehicle {
     try {
       const { 
         make, model, year, registration_number, color, 
-        mileage, vehicle_type, daily_rate, image_url, description 
+        mileage, vehicle_type, daily_rate, image_url, description,
+        location_city, location_state, location_zip, location_address,
+        location_latitude, location_longitude
       } = vehicleData;
       
       const [result] = await db.execute(
         `INSERT INTO vehicles 
-         (make, model, year, registration_number, color, mileage, vehicle_type, daily_rate, image_url, description) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (make, model, year, registration_number, color, mileage, vehicle_type, 
+         daily_rate, image_url, description, 
+         location_city, location_state, location_zip, location_address, 
+         location_latitude, location_longitude) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           make, model, year, registration_number, color || null, 
-          mileage || null, vehicle_type, daily_rate, image_url || null, description || null
+          mileage || null, vehicle_type, daily_rate, image_url || null, description || null,
+          location_city || null, location_state || null, location_zip || null, 
+          location_address || null, location_latitude || null, location_longitude || null
         ]
       );
       
@@ -59,20 +66,27 @@ class Vehicle {
     try {
       const { 
         make, model, year, registration_number, color, 
-        mileage, vehicle_type, daily_rate, is_available, image_url, description 
+        mileage, vehicle_type, daily_rate, is_available, image_url, description,
+        location_city, location_state, location_zip, location_address,
+        location_latitude, location_longitude
       } = vehicleData;
       
       const [result] = await db.execute(
         `UPDATE vehicles SET 
          make = ?, model = ?, year = ?, registration_number = ?, color = ?, 
          mileage = ?, vehicle_type = ?, daily_rate = ?, is_available = ?, 
-         image_url = ?, description = ?
+         image_url = ?, description = ?,
+         location_city = ?, location_state = ?, location_zip = ?, location_address = ?,
+         location_latitude = ?, location_longitude = ?
          WHERE vehicle_id = ?`,
         [
           make, model, year, registration_number, color || null, 
           mileage || null, vehicle_type, daily_rate, 
           is_available !== undefined ? is_available : true, 
-          image_url || null, description || null, vehicleId
+          image_url || null, description || null,
+          location_city || null, location_state || null, location_zip || null, 
+          location_address || null, location_latitude || null, location_longitude || null,
+          vehicleId
         ]
       );
       
@@ -151,10 +165,91 @@ class Vehicle {
         params.push(criteria.available ? 1 : 0);
       }
       
+      // Location-based search criteria
+      if (criteria.location_city) {
+        query += ' AND location_city = ?';
+        params.push(criteria.location_city);
+      }
+      
+      if (criteria.location_state) {
+        query += ' AND location_state = ?';
+        params.push(criteria.location_state);
+      }
+      
+      if (criteria.location_zip) {
+        query += ' AND location_zip = ?';
+        params.push(criteria.location_zip);
+      }
+      
+      // Search by proximity if lat/long and radius provided
+      if (criteria.latitude && criteria.longitude && criteria.radius) {
+        // Haversine formula to calculate distance in kilometers
+        query += ` AND (
+          6371 * acos(
+            cos(radians(?)) * cos(radians(location_latitude)) * 
+            cos(radians(location_longitude) - radians(?)) + 
+            sin(radians(?)) * sin(radians(location_latitude))
+          ) <= ?
+        )`;
+        params.push(
+          parseFloat(criteria.latitude),
+          parseFloat(criteria.longitude),
+          parseFloat(criteria.latitude),
+          parseFloat(criteria.radius)
+        );
+      }
+      
       const [rows] = await db.execute(query, params);
       return rows;
     } catch (error) {
       console.error('Error searching vehicles:', error);
+      throw error;
+    }
+  }
+
+  static async searchVehiclesByLocation(location, radius = 10) {
+    try {
+      // You can implement either a simple search by city/state/zip
+      // or a more advanced proximity search using geocoordinates
+      
+      // Simple location search
+      if (typeof location === 'string') {
+        const [rows] = await db.execute(
+          `SELECT * FROM vehicles WHERE 
+           location_city LIKE ? OR 
+           location_state LIKE ? OR 
+           location_zip LIKE ?`,
+          [`%${location}%`, `%${location}%`, `%${location}%`]
+        );
+        return rows;
+      }
+      
+      // Proximity search if coordinates provided
+      if (location.latitude && location.longitude) {
+        const [rows] = await db.execute(
+          `SELECT *, (
+            6371 * acos(
+              cos(radians(?)) * cos(radians(location_latitude)) * 
+              cos(radians(location_longitude) - radians(?)) + 
+              sin(radians(?)) * sin(radians(location_latitude))
+            )
+          ) AS distance 
+          FROM vehicles 
+          HAVING distance <= ? 
+          ORDER BY distance`,
+          [
+            parseFloat(location.latitude),
+            parseFloat(location.longitude),
+            parseFloat(location.latitude),
+            parseFloat(radius)
+          ]
+        );
+        return rows;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error searching vehicles by location:', error);
       throw error;
     }
   }
@@ -183,6 +278,30 @@ class Vehicle {
       return rows[0].conflict_count === 0;
     } catch (error) {
       console.error('Error checking vehicle availability for date range:', error);
+      throw error;
+    }
+  }
+  
+  static async getAvailableCities() {
+    try {
+      const [rows] = await db.execute(
+        'SELECT DISTINCT location_city FROM vehicles WHERE location_city IS NOT NULL'
+      );
+      return rows.map(row => row.location_city);
+    } catch (error) {
+      console.error('Error getting available cities:', error);
+      throw error;
+    }
+  }
+
+  static async getAvailableStates() {
+    try {
+      const [rows] = await db.execute(
+        'SELECT DISTINCT location_state FROM vehicles WHERE location_state IS NOT NULL'
+      );
+      return rows.map(row => row.location_state);
+    } catch (error) {
+      console.error('Error getting available states:', error);
       throw error;
     }
   }

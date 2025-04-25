@@ -1,4 +1,3 @@
-// filepath: /Users/aditya/Documents/vehicle_rental/controllers/vehicleController.js
 const Vehicle = require('../models/Vehicle');
 const Review = require('../models/Review');
 
@@ -64,7 +63,9 @@ const vehicleController = {
     try {
       const { 
         make, model, year, registration_number, color, 
-        mileage, vehicle_type, daily_rate, image_url, description 
+        mileage, vehicle_type, daily_rate, image_url, description,
+        location_city, location_state, location_zip, location_address,
+        location_latitude, location_longitude 
       } = req.body;
       
       // Validate required fields
@@ -84,7 +85,13 @@ const vehicleController = {
         vehicle_type, 
         daily_rate,
         image_url,
-        description
+        description,
+        location_city,
+        location_state,
+        location_zip,
+        location_address,
+        location_latitude,
+        location_longitude
       });
       
       res.status(201).json({
@@ -103,7 +110,9 @@ const vehicleController = {
       const vehicleId = req.params.id;
       const { 
         make, model, year, registration_number, color, 
-        mileage, vehicle_type, daily_rate, is_available, image_url, description 
+        mileage, vehicle_type, daily_rate, is_available, image_url, description,
+        location_city, location_state, location_zip, location_address,
+        location_latitude, location_longitude
       } = req.body;
       
       // Check if vehicle exists
@@ -123,7 +132,13 @@ const vehicleController = {
         daily_rate, 
         is_available, 
         image_url, 
-        description
+        description,
+        location_city,
+        location_state,
+        location_zip,
+        location_address,
+        location_latitude,
+        location_longitude
       });
       
       if (!success) {
@@ -257,6 +272,57 @@ const vehicleController = {
     } catch (error) {
       console.error('Error checking availability:', error);
       res.status(500).json({ message: 'Server error checking availability' });
+    }
+  },
+  
+  // Get vehicles by location
+  getVehiclesByLocation: async (req, res) => {
+    try {
+      const { location, radius } = req.query;
+      
+      if (!location) {
+        return res.status(400).json({ message: 'Location parameter is required' });
+      }
+      
+      let vehicles;
+      
+      // Check if location contains coordinates
+      if (req.query.latitude && req.query.longitude) {
+        vehicles = await Vehicle.searchVehiclesByLocation({
+          latitude: req.query.latitude,
+          longitude: req.query.longitude
+        }, radius || 10);
+      } else {
+        // Search by text location (city, state, zip)
+        vehicles = await Vehicle.searchVehiclesByLocation(location);
+      }
+      
+      res.status(200).json(vehicles);
+    } catch (error) {
+      console.error('Error getting vehicles by location:', error);
+      res.status(500).json({ message: 'Server error getting vehicles by location' });
+    }
+  },
+  
+  // Get all available cities
+  getAvailableCities: async (req, res) => {
+    try {
+      const cities = await Vehicle.getAvailableCities();
+      res.status(200).json(cities);
+    } catch (error) {
+      console.error('Error getting available cities:', error);
+      res.status(500).json({ message: 'Server error getting cities' });
+    }
+  },
+  
+  // Get all available states
+  getAvailableStates: async (req, res) => {
+    try {
+      const states = await Vehicle.getAvailableStates();
+      res.status(200).json(states);
+    } catch (error) {
+      console.error('Error getting available states:', error);
+      res.status(500).json({ message: 'Server error getting states' });
     }
   }
 };
