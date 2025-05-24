@@ -3,7 +3,7 @@ const db = require('../config/db');
 class Vehicle {
   static async findById(vehicleId) {
     try {
-      const [rows] = await db.execute('SELECT * FROM vehicles WHERE vehicle_id = ?', [vehicleId]);
+      const [rows] = await db.execute('SELECT * FROM vehicles WHERE id = ?', [vehicleId]);
       return rows[0];
     } catch (error) {
       console.error('Error finding vehicle by ID:', error);
@@ -13,7 +13,7 @@ class Vehicle {
 
   static async getAllVehicles() {
     try {
-      const [rows] = await db.execute('SELECT * FROM vehicles');
+      const [rows] = await db.execute('SELECT * FROM vehicles ORDER BY created_at DESC');
       return rows;
     } catch (error) {
       console.error('Error getting all vehicles:', error);
@@ -23,7 +23,7 @@ class Vehicle {
 
   static async getAvailableVehicles() {
     try {
-      const [rows] = await db.execute('SELECT * FROM vehicles WHERE is_available = TRUE');
+      const [rows] = await db.execute('SELECT * FROM vehicles WHERE is_available = TRUE ORDER BY rating DESC, created_at DESC');
       return rows;
     } catch (error) {
       console.error('Error getting available vehicles:', error);
@@ -31,94 +31,72 @@ class Vehicle {
     }
   }
 
+  static async getFeaturedVehicles(limit = 6) {
+    try {
+      const limitNum = parseInt(limit);
+      const [rows] = await db.execute(
+        `SELECT * FROM vehicles WHERE is_available = TRUE ORDER BY rating DESC, total_reviews DESC LIMIT ${limitNum}`
+      );
+      return rows;
+    } catch (error) {
+      console.error('Error getting featured vehicles:', error);
+      throw error;
+    }
+  }
+
   static async create(vehicleData) {
     try {
-      const { 
-        make, model, year, registration_number, color, 
-        mileage, vehicle_type, category, daily_rate, image_url, description,
-        location_city, location_state, location_zip, location_address,
-        location_latitude, location_longitude
+      const {
+        make, model, year, license_plate, color, mileage, vehicle_type,
+        category, daily_rate, image_url, description, features, fuel_type,
+        transmission, seating_capacity, location
       } = vehicleData;
-      
+
       const [result] = await db.execute(
         `INSERT INTO vehicles 
-         (make, model, year, registration_number, color, mileage, vehicle_type, 
-         category, daily_rate, image_url, description, 
-         location_city, location_state, location_zip, location_address, 
-         location_latitude, location_longitude) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (make, model, year, license_plate, color, mileage, vehicle_type,
+         category, daily_rate, image_url, description, features, fuel_type,
+         transmission, seating_capacity, location)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          make, model, year, registration_number, color || null, 
-          mileage || null, vehicle_type, category || 'Standard', daily_rate, 
-          image_url || null, description || null,
-          location_city || null, location_state || null, location_zip || null, 
-          location_address || null, location_latitude || null, location_longitude || null
+          make, model, year, license_plate, color || null, mileage || null,
+          vehicle_type, category || 'Standard', daily_rate, image_url || null,
+          description || null, JSON.stringify(features || {}), fuel_type || 'Petrol',
+          transmission || 'Manual', seating_capacity || 5, location || null
         ]
       );
-      
-      // If pricing tiers are provided, add them
-      if (vehicleData.pricing_tiers && vehicleData.pricing_tiers.length > 0) {
-        await Promise.all(vehicleData.pricing_tiers.map(tier => {
-          return db.execute(
-            `INSERT INTO vehicle_pricing_tiers 
-            (vehicle_id, min_days, max_days, rate_multiplier) 
-            VALUES (?, ?, ?, ?)`,
-            [result.insertId, tier.min_days, tier.max_days, tier.rate_multiplier]
-          );
-        }));
-      }
-      
+
       return { vehicleId: result.insertId, ...vehicleData };
     } catch (error) {
-      console.error('Error creating new vehicle:', error);
+      console.error('Error creating vehicle:', error);
       throw error;
     }
   }
 
   static async update(vehicleId, vehicleData) {
     try {
-      const { 
-        make, model, year, registration_number, color, 
-        mileage, vehicle_type, category, daily_rate, is_available, image_url, description,
-        location_city, location_state, location_zip, location_address,
-        location_latitude, location_longitude
+      const {
+        make, model, year, license_plate, color, mileage, vehicle_type,
+        category, daily_rate, is_available, image_url, description, features,
+        fuel_type, transmission, seating_capacity, location
       } = vehicleData;
-      
+
       const [result] = await db.execute(
-        `UPDATE vehicles SET 
-         make = ?, model = ?, year = ?, registration_number = ?, color = ?, 
-         mileage = ?, vehicle_type = ?, category = ?, daily_rate = ?, is_available = ?, 
-         image_url = ?, description = ?,
-         location_city = ?, location_state = ?, location_zip = ?, location_address = ?,
-         location_latitude = ?, location_longitude = ?
-         WHERE vehicle_id = ?`,
+        `UPDATE vehicles SET
+         make = ?, model = ?, year = ?, license_plate = ?, color = ?,
+         mileage = ?, vehicle_type = ?, category = ?, daily_rate = ?, is_available = ?,
+         image_url = ?, description = ?, features = ?, fuel_type = ?, transmission = ?,
+         seating_capacity = ?, location = ?
+         WHERE id = ?`,
         [
-          make, model, year, registration_number, color || null, 
-          mileage || null, vehicle_type, category || 'Standard', daily_rate, 
-          is_available !== undefined ? is_available : true, 
-          image_url || null, description || null,
-          location_city || null, location_state || null, location_zip || null, 
-          location_address || null, location_latitude || null, location_longitude || null,
-          vehicleId
+          make, model, year, license_plate, color || null, mileage || null,
+          vehicle_type, category || 'Standard', daily_rate,
+          is_available !== undefined ? is_available : true, image_url || null,
+          description || null, JSON.stringify(features || {}), fuel_type || 'Petrol',
+          transmission || 'Manual', seating_capacity || 5, location || null, vehicleId
         ]
       );
-      
-      // Update pricing tiers if provided
-      if (vehicleData.pricing_tiers && vehicleData.pricing_tiers.length > 0) {
-        // Clear existing tiers first
-        await db.execute('DELETE FROM vehicle_pricing_tiers WHERE vehicle_id = ?', [vehicleId]);
-        
-        // Add new tiers
-        await Promise.all(vehicleData.pricing_tiers.map(tier => {
-          return db.execute(
-            `INSERT INTO vehicle_pricing_tiers 
-            (vehicle_id, min_days, max_days, rate_multiplier) 
-            VALUES (?, ?, ?, ?)`,
-            [vehicleId, tier.min_days, tier.max_days, tier.rate_multiplier]
-          );
-        }));
-      }
-      
+
       return result.affectedRows > 0;
     } catch (error) {
       console.error('Error updating vehicle:', error);
@@ -128,7 +106,7 @@ class Vehicle {
 
   static async delete(vehicleId) {
     try {
-      const [result] = await db.execute('DELETE FROM vehicles WHERE vehicle_id = ?', [vehicleId]);
+      const [result] = await db.execute('DELETE FROM vehicles WHERE id = ?', [vehicleId]);
       return result.affectedRows > 0;
     } catch (error) {
       console.error('Error deleting vehicle:', error);
@@ -139,8 +117,8 @@ class Vehicle {
   static async updateAvailability(vehicleId, isAvailable) {
     try {
       const [result] = await db.execute(
-        'UPDATE vehicles SET is_available = ? WHERE vehicle_id = ?',
-        [isAvailable ? 1 : 0, vehicleId]
+        'UPDATE vehicles SET is_available = ? WHERE id = ?',
+        [isAvailable, vehicleId]
       );
       return result.affectedRows > 0;
     } catch (error) {
@@ -153,195 +131,193 @@ class Vehicle {
     try {
       let query = 'SELECT * FROM vehicles WHERE 1=1';
       const params = [];
-      
-      // Handle generic search parameter (search across make, model, and description)
+
+      // Basic search filters
       if (criteria.search) {
         query += ' AND (make LIKE ? OR model LIKE ? OR description LIKE ?)';
         params.push(`%${criteria.search}%`, `%${criteria.search}%`, `%${criteria.search}%`);
-      } else {
-        // Handle specific field searches if no generic search is provided
-        if (criteria.make) {
-          query += ' AND make LIKE ?';
-          params.push(`%${criteria.make}%`);
-        }
-        
-        if (criteria.model) {
-          query += ' AND model LIKE ?';
-          params.push(`%${criteria.model}%`);
-        }
       }
-      
+
       if (criteria.vehicle_type) {
         query += ' AND vehicle_type = ?';
         params.push(criteria.vehicle_type);
       }
-      
+
       if (criteria.category) {
         query += ' AND category = ?';
         params.push(criteria.category);
       }
-      
-      if (criteria.year_min) {
-        query += ' AND year >= ?';
-        params.push(criteria.year_min);
+
+      if (criteria.fuel_type) {
+        query += ' AND fuel_type = ?';
+        params.push(criteria.fuel_type);
       }
-      
-      if (criteria.year_max) {
-        query += ' AND year <= ?';
-        params.push(criteria.year_max);
+
+      if (criteria.transmission) {
+        query += ' AND transmission = ?';
+        params.push(criteria.transmission);
       }
-      
+
+      // Price range filters
       if (criteria.daily_rate_min) {
         query += ' AND daily_rate >= ?';
-        params.push(criteria.daily_rate_min);
+        params.push(parseFloat(criteria.daily_rate_min));
       }
-      
+
       if (criteria.daily_rate_max) {
         query += ' AND daily_rate <= ?';
-        params.push(criteria.daily_rate_max);
+        params.push(parseFloat(criteria.daily_rate_max));
       }
-      
-      if (criteria.available !== undefined) {
-        query += ' AND is_available = ?';
-        params.push(criteria.available ? 1 : 0);
+
+      // Year filters
+      if (criteria.year_min) {
+        query += ' AND year >= ?';
+        params.push(parseInt(criteria.year_min));
       }
-      
-      // Location-based search criteria
+
+      if (criteria.year_max) {
+        query += ' AND year <= ?';
+        params.push(parseInt(criteria.year_max));
+      }
+
+      // Location filters
       if (criteria.location) {
-        query += ' AND (location_city LIKE ? OR location_state LIKE ? OR location_zip LIKE ?)';
-        params.push(`%${criteria.location}%`, `%${criteria.location}%`, `%${criteria.location}%`);
+        query += ' AND location LIKE ?';
+        params.push(`%${criteria.location}%`);
       }
-      
-      // Search by proximity if lat/long and radius provided
-      if (criteria.latitude && criteria.longitude && criteria.radius) {
-        // Haversine formula to calculate distance in kilometers
-        query += ` AND (
-          6371 * acos(
-            cos(radians(?)) * cos(radians(location_latitude)) * 
-            cos(radians(location_longitude) - radians(?)) + 
-            sin(radians(?)) * sin(radians(location_latitude))
-          ) <= ?
-        )`;
-        params.push(
-          parseFloat(criteria.latitude),
-          parseFloat(criteria.longitude),
-          parseFloat(criteria.latitude),
-          parseFloat(criteria.radius)
-        );
+
+      // Availability filter (default to available only)
+      if (criteria.available !== 'false') {
+        query += ' AND is_available = TRUE';
       }
-      
-      // Check availability for date range
+
+      // Date availability check
       if (criteria.start_date && criteria.end_date) {
-        query += ` AND vehicle_id NOT IN (
-          SELECT vehicle_id FROM rentals 
-          WHERE status NOT IN ('cancelled')
-          AND ((start_date <= ? AND end_date >= ?) OR 
-              (start_date >= ? AND start_date <= ?))
+        query += ` AND id NOT IN (
+         SELECT vehicle_id FROM rentals 
+         WHERE status IN ('confirmed', 'active')
+         AND NOT (end_date < ? OR start_date > ?)
         )`;
-        params.push(
-          criteria.end_date,
-          criteria.start_date,
-          criteria.start_date,
-          criteria.end_date
-        );
+        params.push(criteria.start_date, criteria.end_date);
       }
-      
-      // Add sorting options
-      if (criteria.sort) {
-        switch (criteria.sort) {
-          case 'price_asc':
-            query += ' ORDER BY daily_rate ASC';
-            break;
-          case 'price_desc':
-            query += ' ORDER BY daily_rate DESC';
-            break;
-          case 'name_asc':
-            query += ' ORDER BY make ASC, model ASC';
-            break;
-          case 'name_desc':
-            query += ' ORDER BY make DESC, model DESC';
-            break;
-          case 'year_desc':
-            query += ' ORDER BY year DESC';
-            break;
-          case 'year_asc':
-            query += ' ORDER BY year ASC';
-            break;
-          default:
-            query += ' ORDER BY daily_rate ASC';
-        }
-      } else {
-        query += ' ORDER BY daily_rate ASC';
-      }
-      
+
+      // Sorting
+      const sortOptions = {
+        'price_asc': 'daily_rate ASC',
+        'price_desc': 'daily_rate DESC',
+        'rating_desc': 'rating DESC, total_reviews DESC',
+        'year_desc': 'year DESC',
+        'newest': 'created_at DESC'
+      };
+
+      const sortBy = sortOptions[criteria.sort] || 'rating DESC, total_reviews DESC';
+      query += ` ORDER BY ${sortBy}`;
+
+      // Pagination
+      const page = parseInt(criteria.page) || 1;
+      const limit = parseInt(criteria.limit) || 10;
+      const offset = (page - 1) * limit;
+
+      query += ` LIMIT ${limit} OFFSET ${offset}`;
+      // Don't add limit and offset to params anymore
+
       const [rows] = await db.execute(query, params);
-      return rows;
+
+      // Get total count for pagination
+      let countQuery = query.replace(/SELECT \* FROM/, 'SELECT COUNT(*) as total FROM');
+      countQuery = countQuery.replace(/ORDER BY.*/, '').replace(/LIMIT.*/, '');
+      const countParams = params; // Use all params since we removed limit/offset
+
+      const [countResult] = await db.execute(countQuery, countParams);
+      const total = countResult[0].total;
+
+      return {
+        vehicles: rows,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      };
     } catch (error) {
       console.error('Error searching vehicles:', error);
       throw error;
     }
   }
 
-  static async searchVehiclesByLocation(location, radius = 10) {
+  static async findAll(limit = 10, offset = 0, filters = {}) {
     try {
-      // You can implement either a simple search by city/state/zip
-      // or a more advanced proximity search using geocoordinates
-      
-      // Simple location search
-      if (typeof location === 'string') {
-        const [rows] = await db.execute(
-          `SELECT * FROM vehicles WHERE 
-           location_city LIKE ? OR 
-           location_state LIKE ? OR 
-           location_zip LIKE ?`,
-          [`%${location}%`, `%${location}%`, `%${location}%`]
-        );
-        return rows;
+      let query = 'SELECT * FROM vehicles';
+      let conditions = [];
+      let params = [];
+
+      // Apply filters
+      if (filters.is_available !== undefined) {
+        conditions.push('is_available = ?');
+        params.push(filters.is_available);
       }
-      
-      // Proximity search if coordinates provided
-      if (location.latitude && location.longitude) {
-        const [rows] = await db.execute(
-          `SELECT *, (
-            6371 * acos(
-              cos(radians(?)) * cos(radians(location_latitude)) * 
-              cos(radians(location_longitude) - radians(?)) + 
-              sin(radians(?)) * sin(radians(location_latitude))
-            )
-          ) AS distance 
-          FROM vehicles 
-          HAVING distance <= ? 
-          ORDER BY distance`,
-          [
-            parseFloat(location.latitude),
-            parseFloat(location.longitude),
-            parseFloat(location.latitude),
-            parseFloat(radius)
-          ]
-        );
-        return rows;
+
+      if (filters.category) {
+        conditions.push('category = ?');
+        params.push(filters.category);
       }
+
+      if (filters.vehicle_type) {
+        conditions.push('vehicle_type = ?');
+        params.push(filters.vehicle_type);
+      }
+
+      if (filters.search) {
+        conditions.push('(make LIKE ? OR model LIKE ? OR description LIKE ?)');
+        const searchPattern = `%${filters.search}%`;
+        params.push(searchPattern, searchPattern, searchPattern);
+      }
+
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+
+      query += ` ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+
+      const [rows] = await db.execute(query, params);
       
-      return [];
+      // Get total count for pagination
+      let countQuery = 'SELECT COUNT(*) as total FROM vehicles';
+      if (conditions.length > 0) {
+        countQuery += ' WHERE ' + conditions.join(' AND ');
+      }
+      const [countRows] = await db.execute(countQuery, params);
+      const total = countRows[0].total;
+
+      return {
+        vehicles: rows,
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total
+        }
+      };
     } catch (error) {
-      console.error('Error searching vehicles by location:', error);
+      console.error('Error finding all vehicles:', error);
       throw error;
     }
   }
 
   static async getVehicleTypes() {
     try {
-      const [rows] = await db.execute('SELECT DISTINCT vehicle_type FROM vehicles');
+      const [rows] = await db.execute('SELECT DISTINCT vehicle_type FROM vehicles ORDER BY vehicle_type');
       return rows.map(row => row.vehicle_type);
     } catch (error) {
       console.error('Error getting vehicle types:', error);
       throw error;
     }
   }
-  
+
   static async getVehicleCategories() {
     try {
-      const [rows] = await db.execute('SELECT DISTINCT category FROM vehicles');
+      const [rows] = await db.execute('SELECT DISTINCT category FROM vehicles ORDER BY category');
       return rows.map(row => row.category);
     } catch (error) {
       console.error('Error getting vehicle categories:', error);
@@ -349,69 +325,22 @@ class Vehicle {
     }
   }
 
-  static async getPricingTiers(vehicleId) {
+  static async getFuelTypes() {
     try {
-      const [rows] = await db.execute(
-        'SELECT * FROM vehicle_pricing_tiers WHERE vehicle_id = ? ORDER BY min_days ASC',
-        [vehicleId]
-      );
-      return rows;
+      const [rows] = await db.execute('SELECT DISTINCT fuel_type FROM vehicles ORDER BY fuel_type');
+      return rows.map(row => row.fuel_type);
     } catch (error) {
-      console.error('Error getting pricing tiers:', error);
+      console.error('Error getting fuel types:', error);
       throw error;
     }
   }
-  
-  static async calculateRentalCost(vehicleId, startDate, endDate) {
+
+  static async getAvailableCities() {
     try {
-      // Get vehicle basic info
-      const [vehicleRows] = await db.execute(
-        'SELECT daily_rate FROM vehicles WHERE vehicle_id = ?',
-        [vehicleId]
-      );
-      
-      if (!vehicleRows.length) {
-        throw new Error('Vehicle not found');
-      }
-      
-      const vehicle = vehicleRows[0];
-      
-      // Calculate rental duration in days
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const durationMs = end - start;
-      const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24)) || 1; // Minimum 1 day
-      
-      // Get applicable pricing tier
-      const [tierRows] = await db.execute(
-        `SELECT rate_multiplier 
-         FROM vehicle_pricing_tiers 
-         WHERE vehicle_id = ? 
-         AND ? BETWEEN min_days AND max_days 
-         ORDER BY min_days ASC 
-         LIMIT 1`,
-        [vehicleId, durationDays]
-      );
-      
-      // Default to standard rate if no tier applies
-      const rateMultiplier = tierRows.length ? tierRows[0].rate_multiplier : 1.0;
-      
-      // Calculate total cost
-      const dailyRate = parseFloat(vehicle.daily_rate);
-      const totalCost = dailyRate * durationDays * rateMultiplier;
-      
-      return {
-        vehicleId,
-        dailyRate,
-        duration: durationDays,
-        rateMultiplier,
-        baseTotal: dailyRate * durationDays,
-        discountedTotal: totalCost,
-        discountAmount: dailyRate * durationDays - totalCost,
-        discountPercentage: ((1 - rateMultiplier) * 100).toFixed(1)
-      };
+      const [rows] = await db.execute('SELECT DISTINCT location FROM vehicles WHERE location IS NOT NULL ORDER BY location');
+      return rows.map(row => row.location);
     } catch (error) {
-      console.error('Error calculating rental cost:', error);
+      console.error('Error getting available cities:', error);
       throw error;
     }
   }
@@ -419,41 +348,175 @@ class Vehicle {
   static async checkAvailabilityForDateRange(vehicleId, startDate, endDate) {
     try {
       const [rows] = await db.execute(
-        `SELECT COUNT(*) as conflict_count FROM rentals 
-         WHERE vehicle_id = ? 
-         AND status NOT IN ('cancelled')
-         AND ((start_date <= ? AND end_date >= ?) OR 
-              (start_date >= ? AND start_date <= ?))`,
-        [vehicleId, endDate, startDate, startDate, endDate]
+        `SELECT COUNT(*) as conflicts FROM rentals 
+         WHERE vehicle_id = ? AND status IN ('confirmed', 'active')
+         AND NOT (end_date < ? OR start_date > ?)`,
+        [vehicleId, startDate, endDate]
       );
-      
-      return rows[0].conflict_count === 0;
+
+      return rows[0].conflicts === 0;
     } catch (error) {
-      console.error('Error checking vehicle availability for date range:', error);
-      throw error;
-    }
-  }
-  
-  static async getAvailableCities() {
-    try {
-      const [rows] = await db.execute(
-        'SELECT DISTINCT location_city FROM vehicles WHERE location_city IS NOT NULL'
-      );
-      return rows.map(row => row.location_city);
-    } catch (error) {
-      console.error('Error getting available cities:', error);
+      console.error('Error checking vehicle availability:', error);
       throw error;
     }
   }
 
-  static async getAvailableStates() {
+  static async calculateRentalCost(vehicleId, startDate, endDate) {
+    try {
+      const vehicle = await this.findById(vehicleId);
+      if (!vehicle) throw new Error('Vehicle not found');
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+
+      if (days <= 0) throw new Error('Invalid date range');
+
+      // Simple pricing calculation without tiers for now
+      let rateMultiplier = 1.0;
+
+      // Apply discounts for longer rentals
+      if (days >= 7) {
+        rateMultiplier = 0.85; // 15% discount for weekly rentals
+      } else if (days >= 3) {
+        rateMultiplier = 0.95; // 5% discount for 3+ day rentals
+      }
+
+      const baseRate = vehicle.daily_rate;
+      const adjustedRate = baseRate * rateMultiplier;
+      const subtotal = adjustedRate * days;
+      const taxRate = 0.18; // 18% GST
+      const taxAmount = subtotal * taxRate;
+      const total = subtotal + taxAmount;
+
+      return {
+        days,
+        baseRate,
+        rateMultiplier,
+        adjustedRate,
+        subtotal,
+        taxRate,
+        taxAmount,
+        total
+      };
+    } catch (error) {
+      console.error('Error calculating rental cost:', error);
+      throw error;
+    }
+  }
+
+  // Additional methods for controller compatibility
+  static async getCategories() {
+    try {
+      const [rows] = await db.execute('SELECT DISTINCT category FROM vehicles WHERE category IS NOT NULL ORDER BY category');
+      return rows.map(row => row.category);
+    } catch (error) {
+      console.error('Error getting categories:', error);
+      throw error;
+    }
+  }
+
+  static async getLocations() {
+    try {
+      const [rows] = await db.execute('SELECT DISTINCT location FROM vehicles WHERE location IS NOT NULL ORDER BY location');
+      return rows.map(row => row.location);
+    } catch (error) {
+      console.error('Error getting locations:', error);
+      throw error;
+    }
+  }
+
+  static async getFeatured(limit = 6) {
     try {
       const [rows] = await db.execute(
-        'SELECT DISTINCT location_state FROM vehicles WHERE location_state IS NOT NULL'
+        'SELECT * FROM vehicles WHERE is_available = TRUE ORDER BY rating DESC, total_reviews DESC LIMIT ?',
+        [limit]
       );
-      return rows.map(row => row.location_state);
+      return rows;
     } catch (error) {
-      console.error('Error getting available states:', error);
+      console.error('Error getting featured vehicles:', error);
+      throw error;
+    }
+  }
+
+  static async getLuxury(limit = 8) {
+    try {
+      const [rows] = await db.execute(
+        'SELECT * FROM vehicles WHERE category = "Luxury" AND is_available = TRUE ORDER BY daily_rate DESC LIMIT ?',
+        [limit]
+      );
+      return rows;
+    } catch (error) {
+      console.error('Error getting luxury vehicles:', error);
+      throw error;
+    }
+  }
+
+  static async checkAvailability(vehicleId, startDate, endDate) {
+    try {
+      const [rows] = await db.execute(
+        `SELECT COUNT(*) as conflicts FROM rentals 
+         WHERE vehicle_id = ? AND status IN ('confirmed', 'active')
+         AND NOT (end_date < ? OR start_date > ?)`,
+        [vehicleId, startDate, endDate]
+      );
+
+      return rows[0].conflicts === 0;
+    } catch (error) {
+      console.error('Error checking vehicle availability:', error);
+      throw error;
+    }
+  }
+
+  static async getPriceRange() {
+    try {
+      const [rows] = await db.execute('SELECT MIN(daily_rate) as min_price, MAX(daily_rate) as max_price FROM vehicles WHERE is_available = TRUE');
+      return rows[0];
+    } catch (error) {
+      console.error('Error getting price range:', error);
+      throw error;
+    }
+  }
+
+  static async getStats() {
+    try {
+      const [rows] = await db.execute(`
+        SELECT 
+          COUNT(*) as total_vehicles,
+          COUNT(CASE WHEN is_available = TRUE THEN 1 END) as available_vehicles,
+          AVG(daily_rate) as average_rate,
+          COUNT(DISTINCT category) as total_categories
+        FROM vehicles
+      `);
+      return rows[0];
+    } catch (error) {
+      console.error('Error getting vehicle stats:', error);
+      throw error;
+    }
+  }
+
+  static async findSimilar(vehicleId, category, limit = 4) {
+    try {
+      const [rows] = await db.execute(
+        'SELECT * FROM vehicles WHERE category = ? AND id != ? AND is_available = TRUE ORDER BY rating DESC LIMIT ?',
+        [category, vehicleId, limit]
+      );
+      return rows;
+    } catch (error) {
+      console.error('Error finding similar vehicles:', error);
+      throw error;
+    }
+  }
+
+  static async findByCategory(category, limit = 12, offset = 0) {
+    try {
+      const [rows] = await db.execute(
+        'SELECT * FROM vehicles WHERE category = ? AND is_available = TRUE ORDER BY rating DESC LIMIT ? OFFSET ?',
+        [category, limit, offset]
+      );
+      return rows;
+    } catch (error) {
+      console.error('Error finding vehicles by category:', error);
       throw error;
     }
   }

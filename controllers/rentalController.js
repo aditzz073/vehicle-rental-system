@@ -1,416 +1,615 @@
-// filepath: /Users/aditya/Documents/vehicle_rental/controllers/rentalController.js
 const Rental = require('../models/Rental');
 const Vehicle = require('../models/Vehicle');
-const Review = require('../models/Review');
 const Payment = require('../models/Payment');
 
-const rentalController = {
-  // Get user's rentals
-  getUserRentals: async (req, res) => {
+class RentalController {
+  // Create a new rental booking
+  static async createRental(req, res) {
     try {
-      const userId = req.session.user.user_id;
-      const rentals = await Rental.getUserRentals(userId);
-      res.status(200).json(rentals);
-    } catch (error) {
-      console.error('Error getting user rentals:', error);
-      res.status(500).json({ message: 'Server error getting rentals' });
-    }
-  },
-  
-  // Get all rentals (admin only)
-  getAllRentals: async (req, res) => {
-    try {
-      const rentals = await Rental.getAllRentals();
-      res.status(200).json(rentals);
-    } catch (error) {
-      console.error('Error getting all rentals:', error);
-      res.status(500).json({ message: 'Server error getting all rentals' });
-    }
-  },
-  
-  // Get rental by ID
-  getRentalById: async (req, res) => {
-    try {
-      const rentalId = req.params.id;
-      const rental = await Rental.findById(rentalId);
-      
-      if (!rental) {
-        return res.status(404).json({ message: 'Rental not found' });
-      }
-      
-      // Check if the rental belongs to the user or user is admin
-      if (rental.user_id !== req.session.user.user_id && !req.session.user.is_admin) {
-        return res.status(403).json({ message: 'Access denied' });
-      }
-      
-      res.status(200).json(rental);
-    } catch (error) {
-      console.error('Error getting rental by ID:', error);
-      res.status(500).json({ message: 'Server error getting rental' });
-    }
-  },
-  
-  // Calculate rental cost
-  calculateRentalCost: async (req, res) => {
-    try {
-      const { vehicle_id, start_date, end_date } = req.body;
-      
-      if (!vehicle_id || !start_date || !end_date) {
-        return res.status(400).json({ 
-          message: 'Missing required fields: vehicle_id, start_date, end_date' 
+      const userId = req.user?.id || req.session?.user?.id;
+      const {
+        vehicle_id,
+        start_date,
+        end_date,
+        pickup_location,
+        dropoff_location,
+        special_requests
+      } = req.body;
+
+      // Validation
+      if (!vehicle_id || !start_date || !end_date || !pickup_location) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vehicle ID, start date, end date, and pickup location are required'
         });
       }
-      
-      const rentalCost = await Rental.calculateRentalCost(
-        vehicle_id, 
-        start_date, 
-        end_date
-      );
-      
-      res.status(200).json(rentalCost);
-    } catch (error) {
-      console.error('Error calculating rental cost:', error);
-      res.status(500).json({ message: 'Server error calculating rental cost' });
-    }
-  },
-  
-  // Create a rental
-  createRental: async (req, res) => {
-    try {
-      const userId = req.session.user.user_id;
-      const { vehicle_id, start_date, end_date } = req.body;
-      
-      // Validate required fields
-      if (!vehicle_id || !start_date || !end_date) {
-        return res.status(400).json({ 
-          message: 'Missing required fields: vehicle_id, start_date, end_date' 
+
+      // Validate dates
+      const startDate = new Date(start_date);
+      const endDate = new Date(end_date);
+      const now = new Date();
+
+      if (startDate < now) {
+        return res.status(400).json({
+          success: false,
+          message: 'Start date cannot be in the past'
         });
       }
-      
-      // Check if vehicle exists
+
+      if (endDate <= startDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'End date must be after start date'
+        });
+      }
+
+      // Check vehicle existence and availability
       const vehicle = await Vehicle.findById(vehicle_id);
       if (!vehicle) {
-        return res.status(404).json({ message: 'Vehicle not found' });
-      }
-      
-      // Check if vehicle is available for those dates
-      const isAvailable = await Vehicle.checkAvailabilityForDateRange(
-        vehicle_id, 
-        new Date(start_date), 
-        new Date(end_date)
-      );
-      
-      if (!isAvailable) {
-        return res.status(400).json({ 
-          message: 'Vehicle is not available for the selected dates' 
+        return res.status(404).json({
+          success: false,
+          message: 'Vehicle not found'
         });
       }
-      
-      // Calculate rental cost
-      const { totalCost } = await Rental.calculateRentalCost(
-        vehicle_id, 
-        start_date, 
-        end_date
-      );
-      
-      // Create the rental
-      const newRental = await Rental.create({
+
+      if (!vehicle.is_available) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vehicle is not available for rental'
+        });
+      }
+
+      // Check availability for the requested dates
+      const isAvailable = await Vehicle.checkAvailability(vehicle_id, start_date, end_date);
+      if (!isAvailable) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vehicle is not available for the selected dates'
+        });
+      }
+
+      // Calculate total cost
+      const totalCost = await Vehicle.calculateRentalCost(vehicle_id, start_date, end_date);
+
+      // Create rental
+      const rentalData = {
         user_id: userId,
         vehicle_id,
         start_date,
         end_date,
-        total_cost: totalCost
-      });
-      
+        pickup_location,
+        dropoff_location: dropoff_location || pickup_location,
+        total_cost: totalCost.total,
+        special_requests
+      };
+
+      const rental = await Rental.create(rentalData);
+
       res.status(201).json({
-        message: 'Rental created successfully',
-        rental: newRental
+        success: true,
+        message: 'Rental booking created successfully',
+        rental,
+        cost_breakdown: totalCost
       });
+
     } catch (error) {
-      console.error('Error creating rental:', error);
-      res.status(500).json({ message: 'Server error creating rental' });
-    }
-  },
-  
-  // Cancel a rental
-  cancelRental: async (req, res) => {
-    try {
-      const userId = req.session.user.user_id;
-      const rentalId = req.params.id;
-      
-      // Get the rental
-      const rental = await Rental.findById(rentalId);
-      
-      if (!rental) {
-        return res.status(404).json({ message: 'Rental not found' });
-      }
-      
-      // Check if the rental belongs to the user or user is admin
-      if (rental.user_id !== userId && !req.session.user.is_admin) {
-        return res.status(403).json({ message: 'Access denied' });
-      }
-      
-      // Check if rental can be cancelled
-      if (rental.status !== 'pending' && rental.status !== 'active') {
-        return res.status(400).json({ 
-          message: `Cannot cancel rental in ${rental.status} status` 
-        });
-      }
-      
-      // Update rental status
-      const success = await Rental.updateStatus(rentalId, 'cancelled');
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to cancel rental' });
-      }
-      
-      // If payment was made, process refund
-      if (rental.payment_status === 'paid') {
-        // Get payment info
-        const payments = await Payment.getByRentalId(rentalId);
-        if (payments && payments.length > 0) {
-          const payment = payments.find(p => p.status === 'successful');
-          if (payment) {
-            await Payment.processRefund(payment.payment_id);
-          }
-        }
-      }
-      
-      res.status(200).json({ message: 'Rental cancelled successfully' });
-    } catch (error) {
-      console.error('Error cancelling rental:', error);
-      res.status(500).json({ message: 'Server error cancelling rental' });
-    }
-  },
-  
-  // Update rental status (admin only)
-  updateRentalStatus: async (req, res) => {
-    try {
-      const rentalId = req.params.id;
-      const { status } = req.body;
-      
-      if (!status || !['pending', 'active', 'completed', 'cancelled'].includes(status)) {
-        return res.status(400).json({ message: 'Invalid status' });
-      }
-      
-      // Get the rental
-      const rental = await Rental.findById(rentalId);
-      
-      if (!rental) {
-        return res.status(404).json({ message: 'Rental not found' });
-      }
-      
-      // Update rental status
-      const success = await Rental.updateStatus(rentalId, status);
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to update rental status' });
-      }
-      
-      res.status(200).json({ message: 'Rental status updated successfully' });
-    } catch (error) {
-      console.error('Error updating rental status:', error);
-      res.status(500).json({ message: 'Server error updating rental status' });
-    }
-  },
-  
-  // Process payment for a rental
-  processPayment: async (req, res) => {
-    try {
-      const userId = req.session.user.user_id;
-      const rentalId = req.params.id;
-      const { payment_method, transaction_id } = req.body;
-      
-      // Get the rental
-      const rental = await Rental.findById(rentalId);
-      
-      if (!rental) {
-        return res.status(404).json({ message: 'Rental not found' });
-      }
-      
-      // Check if the rental belongs to the user
-      if (rental.user_id !== userId && !req.session.user.is_admin) {
-        return res.status(403).json({ message: 'Access denied' });
-      }
-      
-      // Check if payment is already made
-      if (rental.payment_status === 'paid') {
-        return res.status(400).json({ message: 'Rental is already paid' });
-      }
-      
-      // Process the payment
-      const paymentResult = await Payment.processPayment(rentalId, {
-        amount: rental.total_cost,
-        payment_method,
-        transaction_id
+      console.error('Create rental error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create rental booking',
+        error: error.message
       });
-      
-      if (!paymentResult.success) {
-        return res.status(400).json({ message: 'Payment processing failed' });
-      }
-      
-      res.status(200).json({
-        message: 'Payment processed successfully',
-        payment_id: paymentResult.paymentId
-      });
-    } catch (error) {
-      console.error('Error processing payment:', error);
-      res.status(500).json({ message: 'Server error processing payment' });
-    }
-  },
-  
-  // Get rental payments
-  getRentalPayments: async (req, res) => {
-    try {
-      const userId = req.session.user.user_id;
-      const rentalId = req.params.id;
-      
-      // Get the rental
-      const rental = await Rental.findById(rentalId);
-      
-      if (!rental) {
-        return res.status(404).json({ message: 'Rental not found' });
-      }
-      
-      // Check if the rental belongs to the user or user is admin
-      if (rental.user_id !== userId && !req.session.user.is_admin) {
-        return res.status(403).json({ message: 'Access denied' });
-      }
-      
-      // Get payments
-      const payments = await Payment.getByRentalId(rentalId);
-      res.status(200).json(payments);
-    } catch (error) {
-      console.error('Error getting rental payments:', error);
-      res.status(500).json({ message: 'Server error getting payments' });
-    }
-  },
-  
-  // Process refund (admin only)
-  processRefund: async (req, res) => {
-    try {
-      const rentalId = req.params.id;
-      
-      // Get the rental
-      const rental = await Rental.findById(rentalId);
-      
-      if (!rental) {
-        return res.status(404).json({ message: 'Rental not found' });
-      }
-      
-      // Check if payment is made
-      if (rental.payment_status !== 'paid') {
-        return res.status(400).json({ message: 'Rental is not paid' });
-      }
-      
-      // Get payment info
-      const payments = await Payment.getByRentalId(rentalId);
-      
-      if (!payments || payments.length === 0) {
-        return res.status(400).json({ message: 'No payment found for this rental' });
-      }
-      
-      const payment = payments.find(p => p.status === 'successful');
-      
-      if (!payment) {
-        return res.status(400).json({ message: 'No successful payment found for this rental' });
-      }
-      
-      // Process refund
-      const refundResult = await Payment.processRefund(payment.payment_id);
-      
-      if (!refundResult.success) {
-        return res.status(400).json({ message: 'Refund processing failed' });
-      }
-      
-      res.status(200).json({
-        message: 'Refund processed successfully',
-        refund_id: refundResult.refundId
-      });
-    } catch (error) {
-      console.error('Error processing refund:', error);
-      res.status(500).json({ message: 'Server error processing refund' });
-    }
-  },
-  
-  // Create a review for a rental
-  createReview: async (req, res) => {
-    try {
-      const userId = req.session.user.user_id;
-      const rentalId = req.params.id;
-      const { rating, comment } = req.body;
-      
-      // Validate rating
-      if (!rating || rating < 1 || rating > 5) {
-        return res.status(400).json({ message: 'Rating must be between 1 and 5' });
-      }
-      
-      // Check if user can review
-      const canReviewResult = await Review.checkUserCanReview(userId, rentalId);
-      
-      if (!canReviewResult.canReview) {
-        return res.status(400).json({ message: canReviewResult.reason });
-      }
-      
-      // Get the rental to get vehicle_id
-      const rental = await Rental.findById(rentalId);
-      
-      // Create the review
-      const newReview = await Review.create({
-        rental_id: rentalId,
-        user_id: userId,
-        vehicle_id: rental.vehicle_id,
-        rating,
-        comment
-      });
-      
-      res.status(201).json({
-        message: 'Review created successfully',
-        review: newReview
-      });
-    } catch (error) {
-      console.error('Error creating review:', error);
-      res.status(500).json({ message: 'Server error creating review' });
-    }
-  },
-  
-  // Update a review
-  updateReview: async (req, res) => {
-    try {
-      const userId = req.session.user.user_id;
-      const rentalId = req.params.id;
-      const { rating, comment } = req.body;
-      
-      // Validate rating
-      if (!rating || rating < 1 || rating > 5) {
-        return res.status(400).json({ message: 'Rating must be between 1 and 5' });
-      }
-      
-      // Get the review
-      const review = await Review.getByRentalId(rentalId);
-      
-      if (!review) {
-        return res.status(404).json({ message: 'Review not found' });
-      }
-      
-      // Check if the review belongs to the user
-      if (review.user_id !== userId && !req.session.user.is_admin) {
-        return res.status(403).json({ message: 'Access denied' });
-      }
-      
-      // Update the review
-      const success = await Review.update(review.review_id, { rating, comment });
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to update review' });
-      }
-      
-      res.status(200).json({ message: 'Review updated successfully' });
-    } catch (error) {
-      console.error('Error updating review:', error);
-      res.status(500).json({ message: 'Server error updating review' });
     }
   }
-};
 
-module.exports = rentalController;
+  // Get user's rentals
+  static async getUserRentals(req, res) {
+    try {
+      const userId = req.user?.id || req.session?.user?.id;
+      const { page = 1, limit = 10, status } = req.query;
+
+      const offset = (page - 1) * limit;
+      let rentals;
+
+      if (status) {
+        const filters = { user_id: userId, status };
+        rentals = await Rental.findAll(parseInt(limit), parseInt(offset), filters);
+      } else {
+        rentals = await Rental.findByUserId(userId, parseInt(limit), parseInt(offset));
+      }
+
+      res.json({
+        success: true,
+        rentals,
+        pagination: {
+          current_page: parseInt(page),
+          per_page: parseInt(limit)
+        }
+      });
+
+    } catch (error) {
+      console.error('Get user rentals error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch user rentals',
+        error: error.message
+      });
+    }
+  }
+
+  // Get rental by ID
+  static async getRentalById(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id || req.session?.user?.id;
+      const isAdmin = req.user?.is_admin || req.session?.user?.is_admin;
+
+      const rental = await Rental.findById(id);
+      if (!rental) {
+        return res.status(404).json({
+          success: false,
+          message: 'Rental not found'
+        });
+      }
+
+      // Check if user owns this rental or is admin
+      if (rental.user_id !== userId && !isAdmin) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied'
+        });
+      }
+
+      // Get associated payments
+      const payments = await Payment.findByRentalId(id);
+
+      res.json({
+        success: true,
+        rental: {
+          ...rental,
+          payments
+        }
+      });
+
+    } catch (error) {
+      console.error('Get rental error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch rental',
+        error: error.message
+      });
+    }
+  }
+
+  // Update rental status
+  static async updateRentalStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const userId = req.user?.id || req.session?.user?.id;
+      const isAdmin = req.user?.is_admin || req.session?.user?.is_admin;
+
+      if (!status) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status is required'
+        });
+      }
+
+      const rental = await Rental.findById(id);
+      if (!rental) {
+        return res.status(404).json({
+          success: false,
+          message: 'Rental not found'
+        });
+      }
+
+      // Check permissions
+      if (!isAdmin && rental.user_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied'
+        });
+      }
+
+      // Users can only cancel their own pending/confirmed rentals
+      if (!isAdmin && status === 'cancelled' && !['pending', 'confirmed'].includes(rental.status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Can only cancel pending or confirmed rentals'
+        });
+      }
+
+      const updatedRental = await Rental.updateStatus(id, status);
+
+      res.json({
+        success: true,
+        message: 'Rental status updated successfully',
+        rental: updatedRental
+      });
+
+    } catch (error) {
+      console.error('Update rental status error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update rental status',
+        error: error.message
+      });
+    }
+  }
+
+  // Cancel rental
+  static async cancelRental(req, res) {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      const userId = req.user?.id || req.session?.user?.id;
+
+      const rental = await Rental.findById(id);
+      if (!rental) {
+        return res.status(404).json({
+          success: false,
+          message: 'Rental not found'
+        });
+      }
+
+      // Check if user owns this rental
+      if (rental.user_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied'
+        });
+      }
+
+      const cancelledRental = await Rental.cancel(id, reason);
+
+      res.json({
+        success: true,
+        message: 'Rental cancelled successfully',
+        rental: cancelledRental
+      });
+
+    } catch (error) {
+      console.error('Cancel rental error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to cancel rental',
+        error: error.message
+      });
+    }
+  }
+
+  // Process rental payment
+  static async processPayment(req, res) {
+    try {
+      const { id } = req.params;
+      const {
+        payment_method,
+        card_details
+      } = req.body;
+      const userId = req.user?.id || req.session?.user?.id;
+
+      if (!payment_method) {
+        return res.status(400).json({
+          success: false,
+          message: 'Payment method is required'
+        });
+      }
+
+      const rental = await Rental.findById(id);
+      if (!rental) {
+        return res.status(404).json({
+          success: false,
+          message: 'Rental not found'
+        });
+      }
+
+      // Check if user owns this rental
+      if (rental.user_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied'
+        });
+      }
+
+      // Check if rental is in correct status for payment
+      if (rental.status !== 'pending' && rental.status !== 'confirmed') {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot process payment for this rental status'
+        });
+      }
+
+      if (rental.payment_status === 'paid') {
+        return res.status(400).json({
+          success: false,
+          message: 'Rental is already paid'
+        });
+      }
+
+      // Process payment
+      const paymentData = {
+        rental_id: id,
+        user_id: userId,
+        amount: rental.total_cost,
+        payment_method,
+        card_details
+      };
+
+      const paymentResult = await Payment.processPayment(paymentData);
+
+      if (paymentResult.success) {
+        // Update rental status to confirmed if payment successful
+        await Rental.updateStatus(id, 'confirmed');
+      }
+
+      res.json({
+        success: paymentResult.success,
+        message: paymentResult.message,
+        payment: paymentResult.payment,
+        transaction_id: paymentResult.transaction_id
+      });
+
+    } catch (error) {
+      console.error('Process payment error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to process payment',
+        error: error.message
+      });
+    }
+  }
+
+  // Get upcoming rentals
+  static async getUpcomingRentals(req, res) {
+    try {
+      const userId = req.user?.id || req.session?.user?.id;
+      const isAdmin = req.user?.is_admin || req.session?.user?.is_admin;
+
+      let upcomingRentals;
+
+      if (isAdmin) {
+        upcomingRentals = await Rental.getUpcomingRentals();
+      } else {
+        // Get user's upcoming rentals
+        const filters = {
+          user_id: userId,
+          status: 'confirmed'
+        };
+        const allUserRentals = await Rental.findAll(50, 0, filters);
+        const now = new Date();
+        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+        upcomingRentals = allUserRentals.filter(rental => {
+          const startDate = new Date(rental.start_date);
+          return startDate >= now && startDate <= tomorrow;
+        });
+      }
+
+      res.json({
+        success: true,
+        upcoming_rentals: upcomingRentals
+      });
+
+    } catch (error) {
+      console.error('Get upcoming rentals error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch upcoming rentals',
+        error: error.message
+      });
+    }
+  }
+
+  // Get rental history
+  static async getRentalHistory(req, res) {
+    try {
+      const userId = req.user?.id || req.session?.user?.id;
+      const { page = 1, limit = 10 } = req.query;
+
+      const offset = (page - 1) * limit;
+      const filters = {
+        user_id: userId,
+        status: 'completed'
+      };
+
+      const rentals = await Rental.findAll(parseInt(limit), parseInt(offset), filters);
+
+      res.json({
+        success: true,
+        rental_history: rentals,
+        pagination: {
+          current_page: parseInt(page),
+          per_page: parseInt(limit)
+        }
+      });
+
+    } catch (error) {
+      console.error('Get rental history error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch rental history',
+        error: error.message
+      });
+    }
+  }
+
+  // Get rental statistics
+  static async getRentalStats(req, res) {
+    try {
+      const userId = req.user?.id || req.session?.user?.id;
+      const isAdmin = req.user?.is_admin || req.session?.user?.is_admin;
+
+      if (!isAdmin) {
+        return res.status(403).json({
+          success: false,
+          message: 'Admin access required'
+        });
+      }
+
+      const stats = await Rental.getStats();
+
+      res.json({
+        success: true,
+        stats
+      });
+
+    } catch (error) {
+      console.error('Get rental stats error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch rental statistics',
+        error: error.message
+      });
+    }
+  }
+
+  // Check rental availability
+  static async checkAvailability(req, res) {
+    try {
+      const { vehicle_id, start_date, end_date } = req.query;
+
+      if (!vehicle_id || !start_date || !end_date) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vehicle ID, start date, and end date are required'
+        });
+      }
+
+      const isAvailable = await Rental.checkAvailability(vehicle_id, start_date, end_date);
+
+      res.json({
+        success: true,
+        available: isAvailable
+      });
+
+    } catch (error) {
+      console.error('Check availability error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to check availability',
+        error: error.message
+      });
+    }
+  }
+
+  // Get overdue rentals (admin only)
+  static async getOverdueRentals(req, res) {
+    try {
+      const isAdmin = req.user?.is_admin || req.session?.user?.is_admin;
+
+      if (!isAdmin) {
+        return res.status(403).json({
+          success: false,
+          message: 'Admin access required'
+        });
+      }
+
+      const overdueRentals = await Rental.getOverdueRentals();
+
+      res.json({
+        success: true,
+        overdue_rentals: overdueRentals
+      });
+
+    } catch (error) {
+      console.error('Get overdue rentals error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch overdue rentals',
+        error: error.message
+      });
+    }
+  }
+
+  // Extend rental
+  static async extendRental(req, res) {
+    try {
+      const { id } = req.params;
+      const { new_end_date } = req.body;
+      const userId = req.user?.id || req.session?.user?.id;
+
+      if (!new_end_date) {
+        return res.status(400).json({
+          success: false,
+          message: 'New end date is required'
+        });
+      }
+
+      const rental = await Rental.findById(id);
+      if (!rental) {
+        return res.status(404).json({
+          success: false,
+          message: 'Rental not found'
+        });
+      }
+
+      // Check if user owns this rental
+      if (rental.user_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied'
+        });
+      }
+
+      // Check if rental can be extended
+      if (rental.status !== 'active' && rental.status !== 'confirmed') {
+        return res.status(400).json({
+          success: false,
+          message: 'Can only extend active or confirmed rentals'
+        });
+      }
+
+      const newEndDate = new Date(new_end_date);
+      const currentEndDate = new Date(rental.end_date);
+
+      if (newEndDate <= currentEndDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'New end date must be after current end date'
+        });
+      }
+
+      // Check availability for extended period
+      const isAvailable = await Rental.checkAvailability(
+        rental.vehicle_id,
+        rental.end_date,
+        new_end_date,
+        rental.id
+      );
+
+      if (!isAvailable) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vehicle is not available for the extended period'
+        });
+      }
+
+      // Calculate additional cost
+      const additionalCost = await Vehicle.calculateRentalCost(
+        rental.vehicle_id,
+        rental.end_date,
+        new_end_date
+      );
+
+      // For now, just return the calculation
+      // In a real implementation, you'd update the rental and process additional payment
+      res.json({
+        success: true,
+        message: 'Rental can be extended',
+        additional_cost: additionalCost,
+        new_end_date
+      });
+
+    } catch (error) {
+      console.error('Extend rental error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to extend rental',
+        error: error.message
+      });
+    }
+  }
+}
+
+module.exports = RentalController;

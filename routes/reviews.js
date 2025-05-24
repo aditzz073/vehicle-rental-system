@@ -1,22 +1,29 @@
-// filepath: /Users/aditya/Documents/vehicle_rental/routes/reviews.js
 const express = require('express');
 const router = express.Router();
-const reviewController = require('../controllers/reviewController');
-const authController = require('../controllers/authController');
+const ReviewController = require('../controllers/reviewController');
+const { isAuthenticated } = require('../middleware/auth');
 
-// Public review routes
-router.get('/', reviewController.getAllReviews);
-router.get('/:id', reviewController.getReviewById);
-router.get('/vehicle/:vehicleId', reviewController.getReviewsByVehicle);
-router.get('/stats/vehicle/:vehicleId', reviewController.getVehicleReviewStats);
+// Public routes
+router.get('/recent', ReviewController.getRecentReviews);
+router.get('/top-rated-vehicles', ReviewController.getTopRatedVehicles);
+router.get('/rating-distribution', ReviewController.getRatingDistribution);
+router.get('/platform-stats', ReviewController.getPlatformStats);
+router.get('/vehicle/:vehicle_id', ReviewController.getVehicleReviews);
+router.get('/vehicle/:vehicle_id/summary', ReviewController.getVehicleRatingSummary);
+router.get('/:id', ReviewController.getReviewById);
 
-// Protected review routes
-router.use(authController.isAuthenticated);
-router.get('/user/me', reviewController.getUserReviews);
-router.delete('/:id', reviewController.deleteReview);
+// Protected routes - user must be authenticated
+router.use(isAuthenticated);
 
-// Admin routes
-router.get('/all', authController.isAdmin, reviewController.getAllReviewsAdmin);
-router.delete('/:id/admin', authController.isAdmin, reviewController.adminDeleteReview);
+// Review management
+router.post('/', ReviewController.createReview);
+router.get('/', ReviewController.getAllReviews);
+router.get('/user/reviews', ReviewController.getUserReviews);
+router.get('/user/reviewable', ReviewController.getReviewableRentals);
+router.put('/:id', ReviewController.updateReview);
+router.delete('/:id', ReviewController.deleteReview);
+
+// Check review eligibility
+router.get('/rental/:rental_id/eligibility', ReviewController.checkReviewEligibility);
 
 module.exports = router;

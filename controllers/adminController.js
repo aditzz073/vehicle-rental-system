@@ -1,470 +1,682 @@
-// filepath: /Users/aditya/Documents/vehicle_rental/controllers/adminController.js
 const User = require('../models/User');
 const Vehicle = require('../models/Vehicle');
 const Rental = require('../models/Rental');
 const Payment = require('../models/Payment');
 const Review = require('../models/Review');
 
-const adminController = {
-  // User management
-  getAllUsers: async (req, res) => {
+class AdminController {
+  // Dashboard overview
+  static async getDashboard(req, res) {
     try {
-      const users = await User.getAllUsers();
-      res.status(200).json(users);
-    } catch (error) {
-      console.error('Error getting all users:', error);
-      res.status(500).json({ message: 'Server error getting users' });
-    }
-  },
-  
-  getUserById: async (req, res) => {
-    try {
-      const userId = req.params.id;
-      const user = await User.findById(userId);
-      
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      // Don't return the password
-      const { password, ...userWithoutPassword } = user;
-      
-      res.status(200).json(userWithoutPassword);
-    } catch (error) {
-      console.error('Error getting user by ID:', error);
-      res.status(500).json({ message: 'Server error getting user' });
-    }
-  },
-  
-  updateUser: async (req, res) => {
-    try {
-      const userId = req.params.id;
-      const { first_name, last_name, phone, address } = req.body;
-      
-      // Check if user exists
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      const success = await User.update(userId, {
-        first_name,
-        last_name,
-        phone,
-        address
+      // Get various statistics
+      const [
+        userStats,
+        vehicleStats,
+        rentalStats,
+        paymentStats,
+        recentUsers,
+        recentRentals,
+        recentReviews
+      ] = await Promise.all([
+        User.getStats(),
+        Vehicle.getStats(),
+        Rental.getStats(),
+        Payment.getStats(),
+        User.getRecentUsers(5),
+        Rental.getUpcomingRentals(),
+        Review.getRecentReviews(5)
+      ]);
+
+      res.json({
+        success: true,
+        dashboard: {
+          stats: {
+            users: userStats,
+            vehicles: vehicleStats,
+            rentals: rentalStats,
+            payments: paymentStats
+          },
+          recent_activity: {
+            users: recentUsers,
+            rentals: recentRentals,
+            reviews: recentReviews
+          }
+        }
       });
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to update user' });
-      }
-      
-      res.status(200).json({ message: 'User updated successfully' });
+
     } catch (error) {
-      console.error('Error updating user:', error);
-      res.status(500).json({ message: 'Server error updating user' });
-    }
-  },
-  
-  deleteUser: async (req, res) => {
-    try {
-      const userId = req.params.id;
-      
-      // Check if user exists
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      // Prevent deleting the admin user
-      if (user.is_admin) {
-        return res.status(400).json({ message: 'Cannot delete admin user' });
-      }
-      
-      const success = await User.delete(userId);
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to delete user' });
-      }
-      
-      res.status(200).json({ message: 'User deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      res.status(500).json({ message: 'Server error deleting user' });
-    }
-  },
-  
-  toggleAdminStatus: async (req, res) => {
-    try {
-      const userId = req.params.id;
-      const { is_admin } = req.body;
-      
-      // Check if user exists
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      const success = await User.toggleAdminStatus(userId, is_admin);
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to update admin status' });
-      }
-      
-      res.status(200).json({ message: 'Admin status updated successfully' });
-    } catch (error) {
-      console.error('Error toggling admin status:', error);
-      res.status(500).json({ message: 'Server error updating admin status' });
-    }
-  },
-  
-  activateUser: async (req, res) => {
-    try {
-      const userId = req.params.id;
-      
-      // Check if user exists
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      const success = await User.activateAccount(userId);
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to activate user' });
-      }
-      
-      res.status(200).json({ message: 'User activated successfully' });
-    } catch (error) {
-      console.error('Error activating user:', error);
-      res.status(500).json({ message: 'Server error activating user' });
-    }
-  },
-  
-  deactivateUser: async (req, res) => {
-    try {
-      const userId = req.params.id;
-      
-      // Check if user exists
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      // Prevent deactivating the admin user
-      if (user.is_admin) {
-        return res.status(400).json({ message: 'Cannot deactivate admin user' });
-      }
-      
-      const success = await User.deactivateAccount(userId);
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to deactivate user' });
-      }
-      
-      res.status(200).json({ message: 'User deactivated successfully' });
-    } catch (error) {
-      console.error('Error deactivating user:', error);
-      res.status(500).json({ message: 'Server error deactivating user' });
-    }
-  },
-  
-  // Vehicle management
-  getAllVehicles: async (req, res) => {
-    try {
-      const vehicles = await Vehicle.getAllVehicles();
-      res.status(200).json(vehicles);
-    } catch (error) {
-      console.error('Error getting all vehicles:', error);
-      res.status(500).json({ message: 'Server error getting vehicles' });
-    }
-  },
-  
-  createVehicle: async (req, res) => {
-    try {
-      const { 
-        make, model, year, registration_number, color, 
-        mileage, vehicle_type, daily_rate, image_url, description 
-      } = req.body;
-      
-      // Validate required fields
-      if (!make || !model || !year || !registration_number || !vehicle_type || !daily_rate) {
-        return res.status(400).json({ 
-          message: 'Missing required fields: make, model, year, registration_number, vehicle_type, daily_rate' 
-        });
-      }
-      
-      const newVehicle = await Vehicle.create({
-        make, 
-        model, 
-        year, 
-        registration_number, 
-        color, 
-        mileage, 
-        vehicle_type, 
-        daily_rate,
-        image_url,
-        description
+      console.error('Get dashboard error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch dashboard data',
+        error: error.message
       });
-      
-      res.status(201).json({
-        message: 'Vehicle created successfully',
-        vehicle: newVehicle
-      });
-    } catch (error) {
-      console.error('Error creating vehicle:', error);
-      res.status(500).json({ message: 'Server error creating vehicle' });
-    }
-  },
-  
-  updateVehicle: async (req, res) => {
-    try {
-      const vehicleId = req.params.id;
-      const { 
-        make, model, year, registration_number, color, 
-        mileage, vehicle_type, daily_rate, is_available, image_url, description 
-      } = req.body;
-      
-      // Check if vehicle exists
-      const vehicle = await Vehicle.findById(vehicleId);
-      if (!vehicle) {
-        return res.status(404).json({ message: 'Vehicle not found' });
-      }
-      
-      const success = await Vehicle.update(vehicleId, {
-        make, 
-        model, 
-        year, 
-        registration_number, 
-        color, 
-        mileage, 
-        vehicle_type, 
-        daily_rate, 
-        is_available, 
-        image_url, 
-        description
-      });
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to update vehicle' });
-      }
-      
-      res.status(200).json({ message: 'Vehicle updated successfully' });
-    } catch (error) {
-      console.error('Error updating vehicle:', error);
-      res.status(500).json({ message: 'Server error updating vehicle' });
-    }
-  },
-  
-  deleteVehicle: async (req, res) => {
-    try {
-      const vehicleId = req.params.id;
-      
-      // Check if vehicle exists
-      const vehicle = await Vehicle.findById(vehicleId);
-      if (!vehicle) {
-        return res.status(404).json({ message: 'Vehicle not found' });
-      }
-      
-      const success = await Vehicle.delete(vehicleId);
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to delete vehicle' });
-      }
-      
-      res.status(200).json({ message: 'Vehicle deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting vehicle:', error);
-      res.status(500).json({ message: 'Server error deleting vehicle' });
-    }
-  },
-  
-  // Rental management
-  getAllRentals: async (req, res) => {
-    try {
-      const rentals = await Rental.getAllRentals();
-      res.status(200).json(rentals);
-    } catch (error) {
-      console.error('Error getting all rentals:', error);
-      res.status(500).json({ message: 'Server error getting rentals' });
-    }
-  },
-  
-  getActiveRentals: async (req, res) => {
-    try {
-      const rentals = await Rental.getActiveRentals();
-      res.status(200).json(rentals);
-    } catch (error) {
-      console.error('Error getting active rentals:', error);
-      res.status(500).json({ message: 'Server error getting active rentals' });
-    }
-  },
-  
-  getPendingRentals: async (req, res) => {
-    try {
-      const rentals = await Rental.getPendingRentals();
-      res.status(200).json(rentals);
-    } catch (error) {
-      console.error('Error getting pending rentals:', error);
-      res.status(500).json({ message: 'Server error getting pending rentals' });
-    }
-  },
-  
-  updateRentalStatus: async (req, res) => {
-    try {
-      const rentalId = req.params.id;
-      const { status } = req.body;
-      
-      if (!status || !['pending', 'active', 'completed', 'cancelled'].includes(status)) {
-        return res.status(400).json({ message: 'Invalid status' });
-      }
-      
-      // Get the rental
-      const rental = await Rental.findById(rentalId);
-      
-      if (!rental) {
-        return res.status(404).json({ message: 'Rental not found' });
-      }
-      
-      // Update rental status
-      const success = await Rental.updateStatus(rentalId, status);
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to update rental status' });
-      }
-      
-      res.status(200).json({ message: 'Rental status updated successfully' });
-    } catch (error) {
-      console.error('Error updating rental status:', error);
-      res.status(500).json({ message: 'Server error updating rental status' });
-    }
-  },
-  
-  // Payment management
-  getAllPayments: async (req, res) => {
-    try {
-      // This is a placeholder. We would need to add a method in Payment model
-      // to get all payments with pagination
-      const [rows] = await db.execute(
-        `SELECT p.*, r.user_id, u.username, v.make, v.model
-         FROM payments p
-         JOIN rentals r ON p.rental_id = r.rental_id
-         JOIN users u ON r.user_id = u.user_id
-         JOIN vehicles v ON r.vehicle_id = v.vehicle_id
-         ORDER BY p.payment_date DESC
-         LIMIT 100`
-      );
-      
-      res.status(200).json(rows);
-    } catch (error) {
-      console.error('Error getting all payments:', error);
-      res.status(500).json({ message: 'Server error getting payments' });
-    }
-  },
-  
-  getPaymentStatistics: async (req, res) => {
-    try {
-      const stats = await Payment.getPaymentStatistics();
-      res.status(200).json(stats);
-    } catch (error) {
-      console.error('Error getting payment statistics:', error);
-      res.status(500).json({ message: 'Server error getting payment statistics' });
-    }
-  },
-  
-  updatePaymentStatus: async (req, res) => {
-    try {
-      const paymentId = req.params.id;
-      const { status } = req.body;
-      
-      if (!status || !['successful', 'failed', 'pending', 'refunded'].includes(status)) {
-        return res.status(400).json({ message: 'Invalid status' });
-      }
-      
-      const success = await Payment.updateStatus(paymentId, status);
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to update payment status' });
-      }
-      
-      res.status(200).json({ message: 'Payment status updated successfully' });
-    } catch (error) {
-      console.error('Error updating payment status:', error);
-      res.status(500).json({ message: 'Server error updating payment status' });
-    }
-  },
-  
-  processRefund: async (req, res) => {
-    try {
-      const paymentId = req.params.id;
-      
-      const refundResult = await Payment.processRefund(paymentId);
-      
-      if (!refundResult.success) {
-        return res.status(400).json({ message: 'Refund processing failed' });
-      }
-      
-      res.status(200).json({
-        message: 'Refund processed successfully',
-        refund_id: refundResult.refundId
-      });
-    } catch (error) {
-      console.error('Error processing refund:', error);
-      res.status(500).json({ message: 'Server error processing refund' });
-    }
-  },
-  
-  // Dashboard statistics
-  getDashboardStats: async (req, res) => {
-    try {
-      // Get active rentals count
-      const [activeRentals] = await db.execute(
-        'SELECT COUNT(*) as count FROM rentals WHERE status = ?',
-        ['active']
-      );
-      
-      // Get pending rentals count
-      const [pendingRentals] = await db.execute(
-        'SELECT COUNT(*) as count FROM rentals WHERE status = ?',
-        ['pending']
-      );
-      
-      // Get total vehicles count
-      const [totalVehicles] = await db.execute(
-        'SELECT COUNT(*) as count, COUNT(CASE WHEN is_available = 1 THEN 1 END) as available FROM vehicles'
-      );
-      
-      // Get total users count
-      const [totalUsers] = await db.execute(
-        'SELECT COUNT(*) as count FROM users WHERE is_admin = 0'
-      );
-      
-      // Get recent rentals
-      const [recentRentals] = await db.execute(
-        `SELECT r.*, u.username, v.make, v.model 
-         FROM rentals r
-         JOIN users u ON r.user_id = u.user_id
-         JOIN vehicles v ON r.vehicle_id = v.vehicle_id
-         ORDER BY r.created_at DESC
-         LIMIT 5`
-      );
-      
-      // Get payment statistics
-      const paymentStats = await Payment.getPaymentStatistics();
-      
-      res.status(200).json({
-        active_rentals: activeRentals[0].count,
-        pending_rentals: pendingRentals[0].count,
-        total_vehicles: totalVehicles[0].count,
-        available_vehicles: totalVehicles[0].available,
-        total_users: totalUsers[0].count,
-        recent_rentals: recentRentals,
-        payment_stats: paymentStats
-      });
-    } catch (error) {
-      console.error('Error getting dashboard statistics:', error);
-      res.status(500).json({ message: 'Server error getting dashboard statistics' });
     }
   }
-};
 
-module.exports = adminController;
+  // User management
+  static async getAllUsers(req, res) {
+    try {
+      const { page = 1, limit = 20, search, status } = req.query;
+
+      const offset = (page - 1) * limit;
+      const filters = {};
+      
+      if (search) filters.search = search;
+      if (status) filters.is_active = status === 'active';
+
+      const result = await User.findAll(parseInt(limit), parseInt(offset), filters);
+
+      res.json({
+        success: true,
+        users: result.users,
+        pagination: {
+          current_page: parseInt(page),
+          per_page: parseInt(limit),
+          total: result.pagination.total,
+          has_more: result.pagination.hasMore
+        }
+      });
+
+    } catch (error) {
+      console.error('Get all users error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch users',
+        error: error.message
+      });
+    }
+  }
+
+  static async getUserById(req, res) {
+    try {
+      const { id } = req.params;
+      const user = await User.findById(id);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      // Get user's rental history
+      const rentals = await Rental.findByUserId(id, 10, 0);
+      const payments = await Payment.findByUserId(id, 10, 0);
+
+      const { password_hash, ...userResponse } = user;
+
+      res.json({
+        success: true,
+        user: {
+          ...userResponse,
+          rental_history: rentals,
+          payment_history: payments
+        }
+      });
+
+    } catch (error) {
+      console.error('Get user error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch user',
+        error: error.message
+      });
+    }
+  }
+
+  static async updateUser(req, res) {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+
+      // Remove sensitive fields that shouldn't be updated directly
+      delete updateData.password_hash;
+      delete updateData.id;
+      delete updateData.created_at;
+      delete updateData.updated_at;
+
+      const updatedUser = await User.update(id, updateData);
+
+      const { password_hash, ...userResponse } = updatedUser;
+
+      res.json({
+        success: true,
+        message: 'User updated successfully',
+        user: userResponse
+      });
+
+    } catch (error) {
+      console.error('Update user error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update user',
+        error: error.message
+      });
+    }
+  }
+
+  static async toggleUserStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const { is_active } = req.body;
+
+      if (typeof is_active !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          message: 'is_active must be a boolean value'
+        });
+      }
+
+      const updatedUser = await User.update(id, { is_active });
+
+      const { password_hash, ...userResponse } = updatedUser;
+
+      res.json({
+        success: true,
+        message: `User ${is_active ? 'activated' : 'deactivated'} successfully`,
+        user: userResponse
+      });
+
+    } catch (error) {
+      console.error('Toggle user status error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to toggle user status',
+        error: error.message
+      });
+    }
+  }
+
+  // Vehicle management
+  static async getAllVehicles(req, res) {
+    try {
+      const { page = 1, limit = 20, search, category, status } = req.query;
+
+      const offset = (page - 1) * limit;
+      const filters = {};
+      
+      if (search) filters.search = search;
+      if (category) filters.category = category;
+      if (status) filters.is_available = status === 'available';
+
+      const result = await Vehicle.findAll(parseInt(limit), parseInt(offset), filters);
+
+      res.json({
+        success: true,
+        vehicles: result.vehicles,
+        pagination: {
+          current_page: parseInt(page),
+          per_page: parseInt(limit),
+          total: result.pagination.total,
+          has_more: result.pagination.hasMore
+        }
+      });
+
+    } catch (error) {
+      console.error('Get all vehicles error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch vehicles',
+        error: error.message
+      });
+    }
+  }
+
+  static async createVehicle(req, res) {
+    try {
+      const vehicleData = req.body;
+
+      // Validation
+      const requiredFields = ['make', 'model', 'year', 'category', 'daily_rate', 'location'];
+      for (const field of requiredFields) {
+        if (!vehicleData[field]) {
+          return res.status(400).json({
+            success: false,
+            message: `${field} is required`
+          });
+        }
+      }
+
+      const vehicle = await Vehicle.create(vehicleData);
+
+      res.status(201).json({
+        success: true,
+        message: 'Vehicle created successfully',
+        vehicle
+      });
+
+    } catch (error) {
+      console.error('Create vehicle error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create vehicle',
+        error: error.message
+      });
+    }
+  }
+
+  static async updateVehicle(req, res) {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+
+      // Remove fields that shouldn't be updated directly
+      delete updateData.id;
+      delete updateData.created_at;
+      delete updateData.updated_at;
+
+      const updatedVehicle = await Vehicle.update(id, updateData);
+
+      res.json({
+        success: true,
+        message: 'Vehicle updated successfully',
+        vehicle: updatedVehicle
+      });
+
+    } catch (error) {
+      console.error('Update vehicle error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update vehicle',
+        error: error.message
+      });
+    }
+  }
+
+  static async deleteVehicle(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Check if vehicle has active rentals
+      const activeRentals = await Rental.findAll(1, 0, {
+        vehicle_id: id,
+        status: 'active'
+      });
+
+      if (activeRentals.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot delete vehicle with active rentals'
+        });
+      }
+
+      await Vehicle.delete(id);
+
+      res.json({
+        success: true,
+        message: 'Vehicle deleted successfully'
+      });
+
+    } catch (error) {
+      console.error('Delete vehicle error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete vehicle',
+        error: error.message
+      });
+    }
+  }
+
+  // Rental management
+  static async getAllRentals(req, res) {
+    try {
+      const { page = 1, limit = 20, status, user_id, vehicle_id } = req.query;
+
+      const offset = (page - 1) * limit;
+      const filters = {};
+      
+      if (status) filters.status = status;
+      if (user_id) filters.user_id = user_id;
+      if (vehicle_id) filters.vehicle_id = vehicle_id;
+
+      const result = await Rental.findAll(parseInt(limit), parseInt(offset), filters);
+
+      res.json({
+        success: true,
+        rentals: result.rentals,
+        pagination: {
+          current_page: parseInt(page),
+          per_page: parseInt(limit),
+          total: result.pagination.total,
+          has_more: result.pagination.hasMore
+        }
+      });
+
+    } catch (error) {
+      console.error('Get all rentals error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch rentals',
+        error: error.message
+      });
+    }
+  }
+
+  static async updateRentalStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!status) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status is required'
+        });
+      }
+
+      const updatedRental = await Rental.updateStatus(id, status);
+
+      res.json({
+        success: true,
+        message: 'Rental status updated successfully',
+        rental: updatedRental
+      });
+
+    } catch (error) {
+      console.error('Update rental status error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update rental status',
+        error: error.message
+      });
+    }
+  }
+
+  // Payment management
+  static async getAllPayments(req, res) {
+    try {
+      const { page = 1, limit = 20, status, user_id, date_from, date_to } = req.query;
+
+      const offset = (page - 1) * limit;
+      const filters = {};
+      
+      if (status) filters.status = status;
+      if (user_id) filters.user_id = user_id;
+      if (date_from) filters.date_from = date_from;
+      if (date_to) filters.date_to = date_to;
+
+      const payments = await Payment.findAll(parseInt(limit), parseInt(offset), filters);
+
+      res.json({
+        success: true,
+        payments,
+        pagination: {
+          current_page: parseInt(page),
+          per_page: parseInt(limit)
+        }
+      });
+
+    } catch (error) {
+      console.error('Get all payments error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch payments',
+        error: error.message
+      });
+    }
+  }
+
+  static async refundPayment(req, res) {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+
+      const refundResult = await Payment.refund(id, reason);
+
+      res.json({
+        success: true,
+        message: 'Payment refunded successfully',
+        refund: refundResult
+      });
+
+    } catch (error) {
+      console.error('Refund payment error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to refund payment',
+        error: error.message
+      });
+    }
+  }
+
+  // Review management
+  static async getAllReviews(req, res) {
+    try {
+      const { page = 1, limit = 20, rating, vehicle_id } = req.query;
+
+      const offset = (page - 1) * limit;
+      const filters = {};
+      
+      if (rating) filters.rating = rating;
+      if (vehicle_id) filters.vehicle_id = vehicle_id;
+
+      const reviews = await Review.findAll(parseInt(limit), parseInt(offset), filters);
+
+      res.json({
+        success: true,
+        reviews,
+        pagination: {
+          current_page: parseInt(page),
+          per_page: parseInt(limit)
+        }
+      });
+
+    } catch (error) {
+      console.error('Get all reviews error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch reviews',
+        error: error.message
+      });
+    }
+  }
+
+  static async deleteReview(req, res) {
+    try {
+      const { id } = req.params;
+
+      await Review.delete(id);
+
+      res.json({
+        success: true,
+        message: 'Review deleted successfully'
+      });
+
+    } catch (error) {
+      console.error('Delete review error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete review',
+        error: error.message
+      });
+    }
+  }
+
+  // Analytics and reports
+  static async getAnalytics(req, res) {
+    try {
+      const { date_from, date_to } = req.query;
+
+      const [
+        paymentStats,
+        paymentMethods,
+        platformStats,
+        ratingDistribution,
+        topRatedVehicles
+      ] = await Promise.all([
+        Payment.getStats(date_from, date_to),
+        Payment.getPaymentMethodsStats(),
+        Review.getPlatformStats(),
+        Review.getRatingDistribution(),
+        Review.getTopRatedVehicles(10)
+      ]);
+
+      res.json({
+        success: true,
+        analytics: {
+          payment_stats: paymentStats,
+          payment_methods: paymentMethods,
+          platform_stats: platformStats,
+          rating_distribution: ratingDistribution,
+          top_rated_vehicles: topRatedVehicles
+        }
+      });
+
+    } catch (error) {
+      console.error('Get analytics error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch analytics',
+        error: error.message
+      });
+    }
+  }
+
+  // System monitoring
+  static async getSystemStatus(req, res) {
+    try {
+      const [
+        overdueRentals,
+        failedPayments,
+        upcomingRentals
+      ] = await Promise.all([
+        Rental.getOverdueRentals(),
+        Payment.getRecentFailedPayments(10),
+        Rental.getUpcomingRentals()
+      ]);
+
+      res.json({
+        success: true,
+        system_status: {
+          overdue_rentals: overdueRentals,
+          failed_payments: failedPayments,
+          upcoming_rentals: upcomingRentals
+        }
+      });
+
+    } catch (error) {
+      console.error('Get system status error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch system status',
+        error: error.message
+      });
+    }
+  }
+
+  // Bulk operations
+  static async bulkUpdateUsers(req, res) {
+    try {
+      const { user_ids, update_data } = req.body;
+
+      if (!user_ids || !Array.isArray(user_ids) || user_ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'user_ids array is required'
+        });
+      }
+
+      if (!update_data || typeof update_data !== 'object') {
+        return res.status(400).json({
+          success: false,
+          message: 'update_data object is required'
+        });
+      }
+
+      // Remove sensitive fields
+      delete update_data.password_hash;
+      delete update_data.id;
+
+      const results = [];
+      for (const userId of user_ids) {
+        try {
+          const updatedUser = await User.update(userId, update_data);
+          results.push({ user_id: userId, success: true, user: updatedUser });
+        } catch (error) {
+          results.push({ user_id: userId, success: false, error: error.message });
+        }
+      }
+
+      res.json({
+        success: true,
+        message: 'Bulk update completed',
+        results
+      });
+
+    } catch (error) {
+      console.error('Bulk update users error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to bulk update users',
+        error: error.message
+      });
+    }
+  }
+
+  // Export data
+  static async exportData(req, res) {
+    try {
+      const { type, date_from, date_to } = req.query;
+
+      if (!type) {
+        return res.status(400).json({
+          success: false,
+          message: 'Export type is required (users, vehicles, rentals, payments)'
+        });
+      }
+
+      let data = [];
+      let filename = '';
+
+      switch (type) {
+        case 'users':
+          data = await User.findAll(1000, 0);
+          filename = 'users_export.json';
+          break;
+        case 'vehicles':
+          data = await Vehicle.findAll(1000, 0);
+          filename = 'vehicles_export.json';
+          break;
+        case 'rentals':
+          const filters = {};
+          if (date_from) filters.date_from = date_from;
+          if (date_to) filters.date_to = date_to;
+          data = await Rental.findAll(1000, 0, filters);
+          filename = 'rentals_export.json';
+          break;
+        case 'payments':
+          const paymentFilters = {};
+          if (date_from) paymentFilters.date_from = date_from;
+          if (date_to) paymentFilters.date_to = date_to;
+          data = await Payment.findAll(1000, 0, paymentFilters);
+          filename = 'payments_export.json';
+          break;
+        default:
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid export type'
+          });
+      }
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.json({
+        success: true,
+        export_type: type,
+        export_date: new Date().toISOString(),
+        data
+      });
+
+    } catch (error) {
+      console.error('Export data error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to export data',
+        error: error.message
+      });
+    }
+  }
+}
+
+module.exports = AdminController;

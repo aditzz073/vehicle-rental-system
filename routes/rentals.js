@@ -1,30 +1,25 @@
-// filepath: /Users/aditya/Documents/vehicle_rental/routes/rentals.js
 const express = require('express');
 const router = express.Router();
-const rentalController = require('../controllers/rentalController');
-const authController = require('../controllers/authController');
+const RentalController = require('../controllers/rentalController');
+const { isAuthenticated } = require('../middleware/auth');
 
-// Rental routes - All require authentication
-router.use(authController.isAuthenticated);
+// Public routes (for availability checking)
+router.get('/availability', RentalController.checkAvailability);
 
-// User rental routes
-router.get('/user', rentalController.getUserRentals);
-router.post('/calculate', rentalController.calculateRentalCost);
-router.post('/', rentalController.createRental);
-router.get('/:id', rentalController.getRentalById);
-router.post('/:id/cancel', rentalController.cancelRental);
+// Protected routes - user must be authenticated
+router.use(isAuthenticated);
 
-// Review routes related to rentals
-router.post('/:id/review', rentalController.createReview);
-router.put('/:id/review', rentalController.updateReview);
+// Rental management
+router.post('/', RentalController.createRental);
+router.get('/', RentalController.getUserRentals);
+router.get('/upcoming', RentalController.getUpcomingRentals);
+router.get('/history', RentalController.getRentalHistory);
 
-// Payment routes related to rentals
-router.post('/:id/pay', rentalController.processPayment);
-router.get('/:id/payments', rentalController.getRentalPayments);
-
-// Admin only routes
-router.get('/', authController.isAdmin, rentalController.getAllRentals);
-router.put('/:id/status', authController.isAdmin, rentalController.updateRentalStatus);
-router.post('/:id/refund', authController.isAdmin, rentalController.processRefund);
+// Individual rental operations
+router.get('/:id', RentalController.getRentalById);
+router.put('/:id/status', RentalController.updateRentalStatus);
+router.post('/:id/cancel', RentalController.cancelRental);
+router.post('/:id/payment', RentalController.processPayment);
+router.post('/:id/extend', RentalController.extendRental);
 
 module.exports = router;

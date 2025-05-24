@@ -1,255 +1,449 @@
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 
-const authController = {
-  // Register a new user
-  register: async (req, res) => {
+class AuthController {
+  // User registration
+  static async register(req, res) {
     try {
-      const { username, email, password, first_name, last_name, phone, address } = req.body;
-      
-      // Check if username or email already exists
-      const existingUser = await User.findByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ message: 'Username already exists' });
-      }
-      
-      const existingEmail = await User.findByEmail(email);
-      if (existingEmail) {
-        return res.status(400).json({ message: 'Email already in use' });
-      }
-      
-      // Create new user
-      const newUser = await User.create({
-        username,
-        email,
-        password,
-        first_name,
-        last_name,
-        phone,
-        address
-      });
-      
-      // Return new user (without password)
-      res.status(201).json({
-        message: 'User registered successfully',
-        user: {
-          user_id: newUser.userId,
-          username: newUser.username,
-          email: newUser.email,
-          first_name: newUser.first_name,
-          last_name: newUser.last_name
-        }
-      });
-    } catch (error) {
-      console.error('Error in register:', error);
-      res.status(500).json({ message: 'Server error during registration' });
-    }
-  },
-  
-  // Log in a user
-  login: async (req, res) => {
-    try {
-      console.log('Login attempt for user:', req.body.username);
-      const { username, password } = req.body;
-      
-      // Authenticate user
-      const user = await User.login(username, password);
-      
-      if (!user) {
-        console.log('Authentication failed for user:', username);
-        return res.status(401).json({ message: 'Invalid username or password' });
-      }
-      
-      console.log('Authentication successful for user:', username);
-      
-      // Set session data
-      req.session.user = {
-        user_id: user.user_id,
-        username: user.username,
-        email: user.email,
-        is_admin: user.is_admin
-      };
-      
-      console.log('Session created:', req.session.user);
-      
-      res.status(200).json({
-        message: 'Login successful',
-        user: {
-          user_id: user.user_id,
-          username: user.username,
-          email: user.email,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          is_admin: user.is_admin
-        }
-      });
-    } catch (error) {
-      console.error('Error in login:', error);
-      res.status(500).json({ message: 'Server error during login' });
-    }
-  },
-  
-  // Log out a user
-  logout: (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: 'Error logging out' });
-      }
-      res.clearCookie('connect.sid');
-      res.status(200).json({ message: 'Logged out successfully' });
-    });
-  },
-  
-  // Get user profile
-  getProfile: async (req, res) => {
-    try {
-      const userId = req.session.user.user_id;
-      const user = await User.findById(userId);
-      
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      // Don't send password
-      const { password, ...userProfile } = user;
-      
-      res.status(200).json(userProfile);
-    } catch (error) {
-      console.error('Error getting profile:', error);
-      res.status(500).json({ message: 'Server error getting profile' });
-    }
-  },
-  
-  // Update user profile
-  updateProfile: async (req, res) => {
-    try {
-      const userId = req.session.user.user_id;
-      const { first_name, last_name, phone, address } = req.body;
-      
-      const success = await User.update(userId, {
-        first_name,
-        last_name,
-        phone,
-        address
-      });
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to update profile' });
-      }
-      
-      res.status(200).json({ message: 'Profile updated successfully' });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      res.status(500).json({ message: 'Server error updating profile' });
-    }
-  },
-  
-  // Change password
-  changePassword: async (req, res) => {
-    try {
-      const userId = req.session.user.user_id;
-      const { currentPassword, newPassword } = req.body;
-      
-      // Get user with password
-      const user = await User.findById(userId);
-      
-      // Verify current password
-      const isValid = await bcrypt.compare(currentPassword, user.password);
-      if (!isValid) {
-        return res.status(401).json({ message: 'Current password is incorrect' });
-      }
-      
-      // Update password
-      const success = await User.updatePassword(userId, newPassword);
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to change password' });
-      }
-      
-      res.status(200).json({ message: 'Password changed successfully' });
-    } catch (error) {
-      console.error('Error changing password:', error);
-      res.status(500).json({ message: 'Server error changing password' });
-    }
-  },
-  
-  // Forgot password
-  forgotPassword: async (req, res) => {
-    try {
-      const { email } = req.body;
-      
-      // Find user by email
-      const user = await User.findByEmail(email);
-      if (!user) {
-        // Don't reveal that email doesn't exist for security
-        return res.status(200).json({ 
-          message: 'If your email is registered, you will receive a password reset link' 
+      const { full_name, email, password, phone, date_of_birth, address } = req.body;
+
+      // Validation
+      if (!full_name || !email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Full name, email, and password are required'
         });
       }
-      
-      // Generate reset token
-      const token = await User.createResetToken(user.user_id);
-      
-      // In a real app, send email with reset link
-      // For now, just return the token
-      console.log(`Reset token for ${email}: ${token}`);
-      
-      res.status(200).json({ 
-        message: 'If your email is registered, you will receive a password reset link',
-        // In production, don't return the token directly
-        token: token
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid email address'
+        });
+      }
+
+      // Password validation
+      if (password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: 'Password must be at least 6 characters long'
+        });
+      }
+
+      // Check if user already exists
+      const existingUser = await User.findByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: 'User with this email already exists'
+        });
+      }
+
+      // Create new user
+      const userData = {
+        full_name,
+        email: email.toLowerCase(),
+        password,
+        phone,
+        date_of_birth,
+        address
+      };
+
+      const user = await User.create(userData);
+
+      // Remove password from response
+      const { password: _, ...userResponse } = user;
+
+      res.status(201).json({
+        success: true,
+        message: 'User registered successfully',
+        user: userResponse
       });
+
     } catch (error) {
-      console.error('Error in forgot password:', error);
-      res.status(500).json({ message: 'Server error processing password reset' });
-    }
-  },
-  
-  // Reset password
-  resetPassword: async (req, res) => {
-    try {
-      const { token, newPassword } = req.body;
-      
-      // Validate token and get user ID
-      const userId = await User.validateResetToken(token);
-      if (!userId) {
-        return res.status(400).json({ message: 'Invalid or expired token' });
-      }
-      
-      // Update password
-      const success = await User.updatePassword(userId, newPassword);
-      
-      if (!success) {
-        return res.status(400).json({ message: 'Failed to reset password' });
-      }
-      
-      // Delete the token
-      await User.deleteResetToken(token);
-      
-      res.status(200).json({ message: 'Password reset successfully' });
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      res.status(500).json({ message: 'Server error resetting password' });
-    }
-  },
-  
-  // Middleware to check if user is authenticated
-  isAuthenticated: (req, res, next) => {
-    if (req.session.user) {
-      next();
-    } else {
-      res.status(401).json({ message: 'Authentication required' });
-    }
-  },
-  
-  // Middleware to check if user is admin
-  isAdmin: (req, res, next) => {
-    if (req.session.user && req.session.user.is_admin) {
-      next();
-    } else {
-      res.status(403).json({ message: 'Admin privileges required' });
+      console.error('Registration error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Registration failed',
+        error: error.message
+      });
     }
   }
-};
 
-module.exports = authController;
+  // User login
+  static async login(req, res) {
+    try {
+      const { email, password } = req.body;
+
+      // Validation
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email and password are required'
+        });
+      }
+
+      // Find user by email
+      const user = await User.findByEmail(email.toLowerCase());
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid email or password'
+        });
+      }
+
+      // Check if account is active
+      if (!user.is_active) {
+        return res.status(401).json({
+          success: false,
+          message: 'Account is deactivated. Please contact support.'
+        });
+      }
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid email or password'
+        });
+      }
+
+      // Update last login
+      await User.updateLastLogin(user.id);
+
+      // Create session
+      req.session.user = {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        is_admin: user.is_admin
+      };
+
+      // Remove password from response
+      const { password: _, ...userResponse } = user;
+
+      // Generate a simple token (for testing purposes)
+      const token = Buffer.from(`${user.id}:${user.email}:${Date.now()}`).toString('base64');
+
+      res.json({
+        success: true,
+        message: 'Login successful',
+        user: userResponse,
+        token: token
+      });
+
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Login failed',
+        error: error.message
+      });
+    }
+  }
+
+  // User logout
+  static async logout(req, res) {
+    try {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Logout error:', err);
+          return res.status(500).json({
+            success: false,
+            message: 'Logout failed'
+          });
+        }
+
+        res.clearCookie('connect.sid');
+        res.json({
+          success: true,
+          message: 'Logout successful'
+        });
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Logout failed'
+      });
+    }
+  }
+
+  // Get current user profile
+  static async getProfile(req, res) {
+    try {
+      const userId = req.session.user.id;
+      const user = await User.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      // Remove password from response
+      const { password_hash, ...userResponse } = user;
+
+      res.json({
+        success: true,
+        user: userResponse
+      });
+
+    } catch (error) {
+      console.error('Get profile error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch profile'
+      });
+    }
+  }
+
+  // Update user profile
+  static async updateProfile(req, res) {
+    try {
+      const userId = req.session.user.id;
+      const { full_name, phone, date_of_birth, address } = req.body;
+
+      const updateData = {};
+      if (full_name) updateData.full_name = full_name;
+      if (phone) updateData.phone = phone;
+      if (date_of_birth) updateData.date_of_birth = date_of_birth;
+      if (address) updateData.address = address;
+
+      const updatedUser = await User.update(userId, updateData);
+
+      // Remove password from response
+      const { password_hash, ...userResponse } = updatedUser;
+
+      // Update session
+      req.session.user.full_name = updatedUser.full_name;
+
+      res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        user: userResponse
+      });
+
+    } catch (error) {
+      console.error('Update profile error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update profile',
+        error: error.message
+      });
+    }
+  }
+
+  // Change password
+  static async changePassword(req, res) {
+    try {
+      const userId = req.session.user.id;
+      const { current_password, new_password } = req.body;
+
+      // Validation
+      if (!current_password || !new_password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Current password and new password are required'
+        });
+      }
+
+      if (new_password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: 'New password must be at least 6 characters long'
+        });
+      }
+
+      // Get current user
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await bcrypt.compare(current_password, user.password_hash);
+      if (!isCurrentPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          message: 'Current password is incorrect'
+        });
+      }
+
+      // Update password
+      await User.updatePassword(userId, new_password);
+
+      res.json({
+        success: true,
+        message: 'Password changed successfully'
+      });
+
+    } catch (error) {
+      console.error('Change password error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to change password',
+        error: error.message
+      });
+    }
+  }
+
+  // Forgot password
+  static async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is required'
+        });
+      }
+
+      const user = await User.findByEmail(email.toLowerCase());
+      if (!user) {
+        // Don't reveal if email exists or not for security
+        return res.json({
+          success: true,
+          message: 'If the email exists, a password reset link has been sent'
+        });
+      }
+
+      const resetToken = await User.generatePasswordResetToken(user.id);
+
+      // In a real application, you would send an email here
+      // For now, we'll just return the token (remove this in production)
+      console.log(`Password reset token for ${email}: ${resetToken}`);
+
+      res.json({
+        success: true,
+        message: 'If the email exists, a password reset link has been sent',
+        // Remove this in production:
+        reset_token: resetToken
+      });
+
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to process password reset request'
+      });
+    }
+  }
+
+  // Reset password
+  static async resetPassword(req, res) {
+    try {
+      const { token, new_password } = req.body;
+
+      if (!token || !new_password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Reset token and new password are required'
+        });
+      }
+
+      if (new_password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: 'Password must be at least 6 characters long'
+        });
+      }
+
+      const result = await User.resetPassword(token, new_password);
+
+      res.json({
+        success: true,
+        message: 'Password reset successfully'
+      });
+
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // Check authentication status
+  static async checkAuth(req, res) {
+    try {
+      if (req.session && req.session.user) {
+        const user = await User.findById(req.session.user.id);
+        if (user && user.is_active) {
+          const { password_hash, ...userResponse } = user;
+          return res.json({
+            success: true,
+            authenticated: true,
+            user: userResponse
+          });
+        }
+      }
+
+      res.json({
+        success: true,
+        authenticated: false
+      });
+
+    } catch (error) {
+      console.error('Check auth error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to check authentication status'
+      });
+    }
+  }
+
+  // Delete account
+  static async deleteAccount(req, res) {
+    try {
+      const userId = req.session.user.id;
+      const { password } = req.body;
+
+      if (!password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Password is required to delete account'
+        });
+      }
+
+      // Verify password
+      const user = await User.findById(userId);
+      const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          message: 'Incorrect password'
+        });
+      }
+
+      // Deactivate account instead of deleting
+      await User.update(userId, { is_active: false });
+
+      // Destroy session
+      req.session.destroy();
+
+      res.json({
+        success: true,
+        message: 'Account deactivated successfully'
+      });
+
+    } catch (error) {
+      console.error('Delete account error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete account'
+      });
+    }
+  }
+}
+
+module.exports = AuthController;
