@@ -149,6 +149,22 @@ app.get('/vehicles-list', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'vehicles.html'));
 });
 
+app.get('/vehicle/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'vehicle-detail.html'));
+});
+
+app.get('/book/:id', isAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'booking.html'));
+});
+
+app.get('/booking-new', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'booking-new.html'));
+});
+
+app.get('/rental/:id', isAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'rental-detail.html'));
+});
+
 // Error handling middleware
 app.use(errorLogger);
 

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Booking - AutoHive</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <!-- Header will be loaded dynamically -->
+    <header id="header-placeholder"></header>
+
+    <main>
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading booking details...</p>
+        </div>
+
+        <!-- Booking Content -->
+        <section id="booking-content" class="py-5" style="display: none;">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="mb-0">
+                                    <i class="fas fa-calendar-check text-primary"></i>
+                                    Complete Your Booking
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <form id="booking-form">
+                                    <!-- Vehicle Details -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-4">
+                                            <img id="vehicle-image" src="" alt="Vehicle" class="img-fluid rounded">
+                                        </div>
+                                        <div class="col-md-8">
+                                            <h4 id="vehicle-name">Vehicle Name</h4>
+                                            <p class="text-muted mb-2">
+                                                <i class="fas fa-tag"></i>
+                                                <span id="vehicle-category">Category</span>
+                                            </p>
+                                            <p class="text-muted mb-2">
+                                                <i class="fas fa-calendar"></i>
+                                                <span id="vehicle-year">Year</span>
+                                            </p>
+                                            <p class="text-muted">
+                                                <i class="fas fa-users"></i>
+                                                <span id="vehicle-capacity">Capacity</span> passengers
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Rental Details -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <label for="start_date" class="form-label">Pickup Date</label>
+                                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="end_date" class="form-label">Return Date</label>
+                                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <label for="pickup_location" class="form-label">Pickup Location</label>
+                                            <input type="text" class="form-control" id="pickup_location" name="pickup_location" 
+                                                   placeholder="Enter pickup address" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="return_location" class="form-label">Return Location</label>
+                                            <input type="text" class="form-control" id="return_location" name="return_location" 
+                                                   placeholder="Enter return address" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Additional Services -->
+                                    <div class="mb-4">
+                                        <h5>Additional Services</h5>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="insurance" name="additional_services" value="insurance">
+                                                    <label class="form-check-label" for="insurance">
+                                                        Comprehensive Insurance (+$25/day)
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="gps" name="additional_services" value="gps">
+                                                    <label class="form-check-label" for="gps">
+                                                        GPS Navigation (+$10/day)
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="driver" name="additional_services" value="driver">
+                                                    <label class="form-check-label" for="driver">
+                                                        Professional Driver (+$100/day)
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="delivery" name="additional_services" value="delivery">
+                                                    <label class="form-check-label" for="delivery">
+                                                        Vehicle Delivery (+$50)
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Special Requirements -->
+                                    <div class="mb-4">
+                                        <label for="special_requirements" class="form-label">Special Requirements</label>
+                                        <textarea class="form-control" id="special_requirements" name="special_requirements" 
+                                                  rows="3" placeholder="Any special requests or requirements..."></textarea>
+                                    </div>
+
+                                    <!-- Terms and Conditions -->
+                                    <div class="mb-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="terms" required>
+                                            <label class="form-check-label" for="terms">
+                                                I agree to the <a href="#" class="text-primary">Terms and Conditions</a> and 
+                                                <a href="#" class="text-primary">Privacy Policy</a>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Booking Summary -->
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Booking Summary</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Daily Rate:</span>
+                                    <span id="daily-rate">$0</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Number of Days:</span>
+                                    <span id="num-days">0</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Subtotal:</span>
+                                    <span id="subtotal">$0</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Additional Services:</span>
+                                    <span id="services-cost">$0</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Tax (10%):</span>
+                                    <span id="tax-amount">$0</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <strong>Total Amount:</strong>
+                                    <strong id="total-amount" class="text-primary">$0</strong>
+                                </div>
+
+                                <button type="button" id="confirm-booking-btn" class="btn btn-primary btn-lg w-100 mb-3">
+                                    <i class="fas fa-credit-card"></i>
+                                    Confirm Booking
+                                </button>
+
+                                <div class="text-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-shield-alt"></i>
+                                        Your payment is secure and encrypted
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Support -->
+                        <div class="card mt-3">
+                            <div class="card-body text-center">
+                                <h6>Need Help?</h6>
+                                <p class="small text-muted mb-2">Our support team is here to assist you</p>
+                                <a href="tel:+1234567890" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-phone"></i> Call Support
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Error State -->
+        <section id="error-state" class="py-5 text-center" style="display: none;">
+            <div class="container">
+                <div class="alert alert-danger">
+                    <h4>Booking Error</h4>
+                    <p id="error-message">Unable to load booking details. Please try again.</p>
+                    <a href="/vehicles" class="btn btn-primary">Browse Vehicles</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer will be loaded dynamically -->
+    <footer id="footer-placeholder"></footer>
+
+    <!-- Alert Container -->
+    <div id="alert-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Booking</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to confirm this booking?</p>
+                    <div class="alert alert-info">
+                        <strong>Total Amount: <span id="modal-total">$0</span></strong>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="final-confirm-btn" class="btn btn-primary">
+                        <i class="fas fa-check"></i> Confirm Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/layout.js"></script>
+    <script src="/js/booking.js"></script>
+</body>
+</html>

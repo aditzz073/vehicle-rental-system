@@ -14,53 +14,67 @@
 
   <div class="container py-5">
     <h1 class="mb-4">Browse Vehicles</h1>
+    
+    <!-- New Booking Flow CTA -->
+    <div class="alert alert-primary mb-4 d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-1">Try our new booking experience!</h5>
+        <p class="mb-0">We've redesigned our booking process to make it easier and faster to find and book your perfect vehicle.</p>
+      </div>
+      <a href="/booking-new.html" class="btn btn-primary">
+        <i class="fas fa-car me-1"></i> New Booking Flow
+      </a>
+    </div>
 
     <!-- Search and Filter Section -->
     <div class="card mb-4 shadow-sm">
       <div class="card-body">
-        <form id="vehicle-search-form">
+        <form id="vehicle-filters">
           <div class="row">
             <div class="col-md-3 mb-3">
               <label for="search" class="form-label">Search</label>
               <input type="text" class="form-control" id="search" name="search" placeholder="Search by make, model...">
             </div>
             <div class="col-md-3 mb-3">
-              <label for="vehicle-type" class="form-label">Vehicle Type</label>
-              <select class="form-select" id="vehicle-type" name="vehicle_type">
-                <option value="">All Types</option>
-                <!-- Vehicle types will be loaded dynamically -->
-              </select>
-            </div>
-            <div class="col-md-3 mb-3">
-              <label for="vehicle-category" class="form-label">Category</label>
-              <select class="form-select" id="vehicle-category" name="category">
+              <label for="category" class="form-label">Category</label>
+              <select class="form-select" id="category" name="category">
                 <option value="">All Categories</option>
-                <!-- Vehicle categories will be loaded dynamically -->
+                <option value="luxury">Luxury</option>
+                <option value="sedan">Sedan</option>
+                <option value="suv">SUV</option>
+                <option value="sports">Sports</option>
+                <option value="convertible">Convertible</option>
+                <option value="hatchback">Hatchback</option>
+                <option value="crossover">Crossover</option>
               </select>
             </div>
             <div class="col-md-3 mb-3">
-              <label for="start-date" class="form-label">Start Date</label>
-              <input type="date" class="form-control" id="start-date" name="start_date">
+              <label for="location" class="form-label">Location</label>
+              <input type="text" class="form-control" id="location" name="location" placeholder="Enter location">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="start_date" class="form-label">Start Date</label>
+              <input type="date" class="form-control" id="start_date" name="start_date">
             </div>
           </div>
           <div class="row">
             <div class="col-md-3 mb-3">
-              <label for="end-date" class="form-label">End Date</label>
-              <input type="date" class="form-control" id="end-date" name="end_date">
+              <label for="end_date" class="form-label">End Date</label>
+              <input type="date" class="form-control" id="end_date" name="end_date">
             </div>
             <div class="col-md-3 mb-3">
-              <label for="price-min" class="form-label">Min Price</label>
-              <input type="number" class="form-control" id="price-min" name="daily_rate_min" placeholder="Min Price">
+              <label for="min_price" class="form-label">Min Price (₹/day)</label>
+              <input type="number" class="form-control" id="min_price" name="min_price" placeholder="Min Price">
             </div>
             <div class="col-md-3 mb-3">
-              <label for="price-max" class="form-label">Max Price</label>
-              <input type="number" class="form-control" id="price-max" name="daily_rate_max" placeholder="Max Price">
+              <label for="max_price" class="form-label">Max Price (₹/day)</label>
+              <input type="number" class="form-control" id="max_price" name="max_price" placeholder="Max Price">
             </div>
             <div class="col-md-3 d-flex align-items-end">
               <button type="submit" class="btn btn-primary me-2">
                 <i class="fas fa-search"></i> Search
               </button>
-              <button type="reset" class="btn btn-outline-secondary">
+              <button type="reset" class="btn btn-outline-secondary" onclick="resetFilters()">
                 <i class="fas fa-redo"></i> Reset
               </button>
             </div>
@@ -86,19 +100,51 @@
     </div>
 
     <!-- Vehicles Grid -->
-    <div class="row row-cols-1 row-cols-md-3 g-4" id="vehicles-container">
+    <div class="row" id="vehicles-container">
       <!-- Vehicle cards will be dynamically inserted here -->
-      <div class="text-center w-100 py-5">
+      <div class="col-12 text-center py-5">
         <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
+          <span class="visually-hidden">Loading vehicles...</span>
         </div>
+        <p class="mt-2">Loading vehicles...</p>
       </div>
     </div>
 
     <!-- Pagination -->
-    <nav aria-label="Page navigation" class="mt-5">
-      <ul class="pagination justify-content-center" id="pagination">
-        <!-- Pagination will be generated dynamically -->
+    <div id="pagination-container" class="mt-5">
+      <!-- Pagination will be generated dynamically -->
+    </div>
+  </div>
+
+  <!-- Footer will be loaded from layout -->
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Main Scripts -->
+  <script src="/js/layout.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="/js/vehicle.js"></script>
+  
+  <script>
+    // Vehicle page specific JavaScript
+    function resetFilters() {
+      document.getElementById('vehicle-filters').reset();
+      // Reload vehicles without filters
+      window.location.href = '/vehicles-list';
+    }
+
+    // Set minimum date to today
+    document.addEventListener('DOMContentLoaded', function() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('start_date').min = today;
+      document.getElementById('end_date').min = today;
+
+      // Update end date minimum when start date changes
+      document.getElementById('start_date').addEventListener('change', function() {
+        document.getElementById('end_date').min = this.value;
+      });
+    });
+  </script>
       </ul>
     </nav>
   </div>
