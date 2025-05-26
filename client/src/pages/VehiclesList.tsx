@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Pagination, Alert, Badge, Modal } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Pagination, Alert, Badge } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faStar, faFilter, faSort, faSearch, faTimes, faCar, faUsers, 
-  faGasPump, faCogs, faMapMarkerAlt, faCalendarAlt 
-} from '@fortawesome/free-solid-svg-icons';
-import api from '../services/api';
-import '../styles/vehicle-list.css';
+import { faStar, faFilter, faSort, faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
+import axios from 'axios';
 
 // Types
 interface Vehicle {
@@ -15,10 +11,10 @@ interface Vehicle {
   make: string;
   model: string;
   year: number;
-  image_url: string | null;
-  daily_rate: string; // Comes from DB as string
+  image_url: string;
+  daily_rate: number;
   category: string;
-  rating: string; // Comes from DB as string
+  rating: string; // API returns rating as string
   features: any; // Could be string[] or JSON object
   location: string;
   transmission: string;
@@ -27,7 +23,7 @@ interface Vehicle {
   vehicle_type: string;
   color?: string;
   description?: string;
-  is_available?: boolean | number;
+  is_available?: boolean;
 }
 
 interface PriceRange {
@@ -71,22 +67,6 @@ const VehiclesList: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>(queryParams.get('sortBy') || 'price_asc');
   const [currentPage, setCurrentPage] = useState<number>(parseInt(queryParams.get('page') || '1'));
 
-  // Additional filters - transmission, fuel type
-  const [selectedTransmission, setSelectedTransmission] = useState<string>(queryParams.get('transmission') || '');
-  const [selectedFuelType, setSelectedFuelType] = useState<string>(queryParams.get('fuel_type') || '');
-  const [availableOnly, setAvailableOnly] = useState<boolean>(queryParams.get('available') === 'true');
-  
-  // Groupings for filter options
-  const [transmissionOptions, setTransmissionOptions] = useState<string[]>(['Automatic', 'Manual']);
-  const [fuelTypeOptions, setFuelTypeOptions] = useState<string[]>(['Petrol', 'Diesel', 'Electric', 'Hybrid']);
-
-  // Vehicle detail overlay
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
-
-  // Success message
-  const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
-
   // Fetch vehicles based on filter criteria
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -103,15 +83,9 @@ const VehiclesList: React.FC = () => {
         if (searchQuery) params.append('search', searchQuery);
         if (sortBy) params.append('sort_by', sortBy);
         if (currentPage > 1) params.append('page', currentPage.toString());
-        if (selectedTransmission) params.append('transmission', selectedTransmission);
-        if (selectedFuelType) params.append('fuel_type', selectedFuelType);
-        if (availableOnly) params.append('available', 'true');
-        if (selectedTransmission) params.append('transmission', selectedTransmission);
-        if (selectedFuelType) params.append('fuel_type', selectedFuelType);
-        if (availableOnly) params.append('available', 'true');
         
-        // Direct API call using configured service
-        const response = await api.get(`/api/vehicles?${params.toString()}`);
+        // Direct absolute URL API call
+        const response = await axios.get(`http://localhost:8000/api/vehicles?${params.toString()}`);
         console.log('API Response:', response.data);
         
         if (response.data.success) {
@@ -130,7 +104,7 @@ const VehiclesList: React.FC = () => {
     };
 
     fetchVehicles();
-  }, [selectedCategory, selectedLocation, selectedMinPrice, selectedMaxPrice, searchQuery, sortBy, currentPage, currentPriceRange.max, selectedTransmission, selectedFuelType, availableOnly]);
+  }, [selectedCategory, selectedLocation, selectedMinPrice, selectedMaxPrice, searchQuery, sortBy, currentPage, currentPriceRange.max]);
 
   // Fetch filter options (categories, locations, price range)
   useEffect(() => {
@@ -151,40 +125,21 @@ const VehiclesList: React.FC = () => {
 
         // Fetch price range directly from vehicle data
         try {
-          const priceRangeResponse = await api.get('/api/vehicles/price-range');
-          if (priceRangeResponse.data.success) {
-            const priceRangeData = {
-              min: priceRangeResponse.data.min_price || 0,
-              max: priceRangeResponse.data.max_price || 1000
-            };
+          const priceRangeResponse = await axios.get('http://localhost:8000/api/vehicles');
+          if (priceRangeResponse.data.success && priceRangeResponse.data.vehicles.length > 0) {
+            const prices = priceRangeResponse.data.vehicles.map((v: any) => parseFloat(v.daily_rate));
+            const min = Math.floor(Math.min(...prices));
+            const max = Math.ceil(Math.max(...prices));
+            const priceRangeData = { min, max };
             
             setPriceRange(priceRangeData);
             setCurrentPriceRange(priceRangeData);
             
-            if (!selectedMinPrice) setSelectedMinPrice(priceRangeData.min);
-            if (!selectedMaxPrice) setSelectedMaxPrice(priceRangeData.max);
+            if (!selectedMinPrice) setSelectedMinPrice(min);
+            if (!selectedMaxPrice) setSelectedMaxPrice(max);
           }
         } catch (error) {
           console.error('Failed to determine price range:', error);
-          
-          // Fallback to calculating from all vehicles if price-range endpoint fails
-          try {
-            const allVehiclesResponse = await api.get('/api/vehicles');
-            if (allVehiclesResponse.data.success && allVehiclesResponse.data.vehicles.length > 0) {
-              const prices = allVehiclesResponse.data.vehicles.map((v: any) => parseFloat(v.daily_rate));
-              const min = Math.floor(Math.min(...prices));
-              const max = Math.ceil(Math.max(...prices));
-              const priceRangeData = { min, max };
-              
-              setPriceRange(priceRangeData);
-              setCurrentPriceRange(priceRangeData);
-              
-              if (!selectedMinPrice) setSelectedMinPrice(min);
-              if (!selectedMaxPrice) setSelectedMaxPrice(max);
-            }
-          } catch (fallbackError) {
-            console.error('Failed to determine price range from all vehicles:', fallbackError);
-          }
         }
       } catch (err) {
         console.error('Error fetching filter options:', err);
@@ -205,12 +160,9 @@ const VehiclesList: React.FC = () => {
     if (searchQuery) params.append('search', searchQuery);
     if (sortBy) params.append('sortBy', sortBy);
     if (currentPage > 1) params.append('page', currentPage.toString());
-    if (selectedTransmission) params.append('transmission', selectedTransmission);
-    if (selectedFuelType) params.append('fuel_type', selectedFuelType);
-    if (availableOnly) params.append('available', 'true');
     
     navigate({ search: params.toString() });
-  }, [selectedCategory, selectedLocation, selectedMinPrice, selectedMaxPrice, searchQuery, sortBy, currentPage, navigate, priceRange, selectedTransmission, selectedFuelType, availableOnly]);
+  }, [selectedCategory, selectedLocation, selectedMinPrice, selectedMaxPrice, searchQuery, sortBy, currentPage, navigate, priceRange]);
 
   // Handle form submission
   const handleFilterSubmit = (e: React.FormEvent) => {
@@ -227,9 +179,6 @@ const VehiclesList: React.FC = () => {
     setSearchQuery('');
     setSortBy('price_asc');
     setCurrentPage(1);
-    setSelectedTransmission('');
-    setSelectedFuelType('');
-    setAvailableOnly(false);
   };
 
   // Handle pagination
@@ -429,49 +378,6 @@ const VehiclesList: React.FC = () => {
                     />
                   </Form.Group>
                   
-                  {/* Transmission */}
-                  <Form.Group className="mb-3">
-                    <Form.Label>Transmission</Form.Label>
-                    <Form.Select
-                      value={selectedTransmission}
-                      onChange={(e) => setSelectedTransmission(e.target.value)}
-                    >
-                      <option value="">All Transmissions</option>
-                      {transmissionOptions.map((transmission, index) => (
-                        <option key={index} value={transmission}>
-                          {transmission}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                  
-                  {/* Fuel Type */}
-                  <Form.Group className="mb-3">
-                    <Form.Label>Fuel Type</Form.Label>
-                    <Form.Select
-                      value={selectedFuelType}
-                      onChange={(e) => setSelectedFuelType(e.target.value)}
-                    >
-                      <option value="">All Fuel Types</option>
-                      {fuelTypeOptions.map((fuelType, index) => (
-                        <option key={index} value={fuelType}>
-                          {fuelType}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                  
-                  {/* Availability */}
-                  <Form.Group className="mb-3">
-                    <Form.Check
-                      type="checkbox"
-                      id="availableOnly"
-                      label="Available Now"
-                      checked={availableOnly}
-                      onChange={(e) => setAvailableOnly(e.target.checked)}
-                    />
-                  </Form.Group>
-                  
                   {/* Sort By */}
                   <Form.Group className="mb-3">
                     <Form.Label>
@@ -500,7 +406,7 @@ const VehiclesList: React.FC = () => {
           {/* Vehicles List */}
           <Col lg={9}>
             {/* Active Filters */}
-            {(selectedCategory || selectedLocation || selectedMinPrice > priceRange.min || selectedMaxPrice < priceRange.max || searchQuery || selectedTransmission || selectedFuelType || availableOnly) && (
+            {(selectedCategory || selectedLocation || selectedMinPrice > priceRange.min || selectedMaxPrice < priceRange.max || searchQuery) && (
               <div className="mb-4">
                 <h5>Active Filters:</h5>
                 <div className="d-flex flex-wrap gap-2">
@@ -558,45 +464,6 @@ const VehiclesList: React.FC = () => {
                       </Button>
                     </Badge>
                   )}
-                  
-                  {selectedTransmission && (
-                    <Badge bg="primary" className="p-2">
-                      Transmission: {selectedTransmission}
-                      <Button 
-                        variant="link" 
-                        className="p-0 ms-2 text-white" 
-                        onClick={() => setSelectedTransmission('')}
-                      >
-                        <FontAwesomeIcon icon={faTimes} />
-                      </Button>
-                    </Badge>
-                  )}
-                  
-                  {selectedFuelType && (
-                    <Badge bg="primary" className="p-2">
-                      Fuel: {selectedFuelType}
-                      <Button 
-                        variant="link" 
-                        className="p-0 ms-2 text-white" 
-                        onClick={() => setSelectedFuelType('')}
-                      >
-                        <FontAwesomeIcon icon={faTimes} />
-                      </Button>
-                    </Badge>
-                  )}
-                  
-                  {availableOnly && (
-                    <Badge bg="success" className="p-2">
-                      Available Now
-                      <Button 
-                        variant="link" 
-                        className="p-0 ms-2 text-white" 
-                        onClick={() => setAvailableOnly(false)}
-                      >
-                        <FontAwesomeIcon icon={faTimes} />
-                      </Button>
-                    </Badge>
-                  )}
                 </div>
               </div>
             )}
@@ -627,65 +494,44 @@ const VehiclesList: React.FC = () => {
                     vehicles.map((vehicle) => (
                       <Col key={vehicle.id} lg={4} md={6} className="mb-4">
                         <Card className="vehicle-card h-100 shadow-sm">
-                          <div className="position-relative">
-                            <Card.Img 
-                              variant="top" 
-                              src={vehicle.image_url || 'https://placehold.co/600x400?text=Vehicle+Image'} 
-                              alt={`${vehicle.make} ${vehicle.model}`}
-                              className="vehicle-image"
-                              onError={(e) => {
-                                e.currentTarget.src = 'https://placehold.co/600x400?text=Vehicle+Image';
-                              }}
-                            />
-                            {(typeof vehicle.is_available === 'boolean' && vehicle.is_available) || 
-                             (typeof vehicle.is_available === 'number' && vehicle.is_available === 1) ? (
-                              <span className="position-absolute top-0 end-0 m-2 badge bg-success">Available</span>
-                            ) : (
-                              <span className="position-absolute top-0 end-0 m-2 badge bg-danger">Unavailable</span>
-                            )}
-                            <span className="position-absolute bottom-0 start-0 m-2 badge bg-dark">
-                              {vehicle.category}
-                            </span>
-                          </div>
+                          <Card.Img 
+                            variant="top" 
+                            src={vehicle.image_url || 'https://placehold.co/600x400?text=Vehicle+Image'} 
+                            alt={`${vehicle.make} ${vehicle.model}`}
+                            onError={(e) => {
+                              e.currentTarget.src = 'https://placehold.co/600x400?text=Vehicle+Image';
+                            }}
+                          />
                           <Card.Body>
                             <div className="d-flex justify-content-between align-items-center mb-2">
-                              <h5 className="mb-0">{vehicle.make} {vehicle.model}</h5>
+                              <span className="vehicle-category">{vehicle.category}</span>
                               <span className="rating">
                                 {renderStars(parseFloat(vehicle.rating) || 0)}
                                 <span className="ms-1">({(parseFloat(vehicle.rating) || 0).toFixed(1)})</span>
                               </span>
                             </div>
-                            <p className="text-muted">{vehicle.year} • {vehicle.color || 'Various colors'}</p>
-                            <h4 className="vehicle-price text-primary">${vehicle.daily_rate}/day</h4>
+                            <Card.Title>{vehicle.make} {vehicle.model} ({vehicle.year})</Card.Title>
+                            <div className="vehicle-price mb-3">${vehicle.daily_rate}/day</div>
                             
-                            <div className="vehicle-specs d-flex flex-wrap mt-3 mb-2">
-                              <div className="spec-item me-3 mb-2">
-                                <FontAwesomeIcon icon={faCar} className="text-secondary me-1" />
-                                <small>{vehicle.transmission}</small>
+                            <div className="d-flex mb-3">
+                              <div className="me-3">
+                                <small className="text-muted d-block">Location</small>
+                                <span>{vehicle.location}</span>
                               </div>
-                              <div className="spec-item me-3 mb-2">
-                                <FontAwesomeIcon icon={faGasPump} className="text-secondary me-1" />
-                                <small>{vehicle.fuel_type}</small>
-                              </div>
-                              <div className="spec-item mb-2">
-                                <FontAwesomeIcon icon={faUsers} className="text-secondary me-1" />
-                                <small>{vehicle.seating_capacity} seats</small>
+                              <div>
+                                <small className="text-muted d-block">Transmission</small>
+                                <span>{vehicle.transmission}</span>
                               </div>
                             </div>
                             
-                            <div className="d-flex align-items-center mb-3">
-                              <FontAwesomeIcon icon={faMapMarkerAlt} className="text-danger me-1" />
-                              <small className="text-muted">{vehicle.location}</small>
-                            </div>
-                            
-                            <div className="vehicle-features mb-3">
+                            <div className="vehicle-features">
                               {vehicle.features && Array.isArray(vehicle.features) ? 
                                 vehicle.features.slice(0, 3).map((feature: string, index: number) => (
-                                  <span key={index} className="vehicle-feature badge bg-light text-dark me-1 mb-1">{feature}</span>
+                                  <span key={index} className="vehicle-feature">{feature}</span>
                                 ))
                               : typeof vehicle.features === 'object' && vehicle.features !== null ? 
                                 Object.keys(vehicle.features).slice(0, 3).map((key: string, index: number) => (
-                                  <span key={index} className="vehicle-feature badge bg-light text-dark me-1 mb-1">{key}</span>
+                                  <span key={index} className="vehicle-feature">{key}</span>
                                 ))
                               : null}
                             </div>
@@ -699,13 +545,9 @@ const VehiclesList: React.FC = () => {
                               </Link>
                               <Link 
                                 to={`/booking-new?vehicle=${vehicle.id}`} 
-                                className={(typeof vehicle.is_available === 'boolean' && !vehicle.is_available) || 
-                                           (typeof vehicle.is_available === 'number' && vehicle.is_available === 0) 
-                                           ? "btn btn-secondary disabled" : "btn btn-primary"}
+                                className="btn btn-primary"
                               >
-                                {(typeof vehicle.is_available === 'boolean' && !vehicle.is_available) || 
-                                 (typeof vehicle.is_available === 'number' && vehicle.is_available === 0) 
-                                 ? "Not Available" : "Book Now"}
+                                Book Now
                               </Link>
                             </div>
                           </Card.Body>

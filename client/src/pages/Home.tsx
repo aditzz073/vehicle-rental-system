@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Card, Alert, Button, Spinner } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar, faCarAlt, faTachometerAlt, faCog, faUsers, faThumbsUp, faShieldAlt } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faCarAlt, faTachometerAlt, faCog, faUsers, faThumbsUp, faShieldAlt, faGasPump, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
 
-// Types
+// Enhanced Types to match API response
 interface Vehicle {
   id: number;
   name: string;
@@ -15,7 +15,11 @@ interface Vehicle {
   daily_rate: string; // Comes from DB as string
   category: string;
   rating: string; // Comes from DB as string
-  features: string[];
+  features: string | string[]; // Can be string or array
+  location?: string;
+  transmission?: string;
+  fuel_type?: string;
+  seating_capacity?: number;
 }
 
 const Home: React.FC = () => {
@@ -26,19 +30,23 @@ const Home: React.FC = () => {
   useEffect(() => {
     const fetchFeaturedVehicles = async () => {
       try {
-        const response = await fetch('/api/vehicles/featured');
+        setLoading(true);
+        // Fixed API endpoint to use absolute URL
+        const response = await fetch('http://localhost:8000/api/vehicles/featured');
         
         if (!response.ok) {
-          throw new Error('Failed to fetch featured vehicles');
+          throw new Error(`Failed to fetch featured vehicles: ${response.status}`);
         }
         
         const data = await response.json();
-        setFeaturedVehicles(data);
-        setLoading(false);
+        // Handle the API response structure with success wrapper
+        const vehiclesData = data.success ? data.vehicles : data;
+        setFeaturedVehicles(vehiclesData);
       } catch (err) {
-        setError('Error loading featured vehicles. Please try again later.');
-        setLoading(false);
         console.error('Error fetching featured vehicles:', err);
+        setError('Error loading featured vehicles. Please try again later.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -116,10 +124,10 @@ const Home: React.FC = () => {
       </Container>
       
       {/* Featured Vehicles Section */}
-      <section>
+      <section className="py-5">
         <Container>
           <div className="text-center mb-5">
-            <h2>Featured Vehicles</h2>
+            <h2 className="display-5 fw-bold">Featured Vehicles</h2>
             <p className="lead text-muted">
               Discover our most popular and exclusive vehicles
             </p>
@@ -127,10 +135,11 @@ const Home: React.FC = () => {
           
           {loading && (
             <div className="text-center my-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
+              <Spinner animation="border" variant="primary" style={{ width: '3rem', height: '3rem' }} />
+              <div className="mt-3">
+                <h5>Loading Featured Vehicles</h5>
+                <p className="text-muted">Please wait while we fetch our best vehicles for you...</p>
               </div>
-              <p className="mt-2">Loading featured vehicles...</p>
             </div>
           )}
           
@@ -163,18 +172,56 @@ const Home: React.FC = () => {
                         <Card.Title>{vehicle.make} {vehicle.model} ({vehicle.year})</Card.Title>
                         <div className="vehicle-price mb-3">${vehicle.daily_rate}/day</div>
                         
+                        {/* Location and Transmission Info */}
+                        {(vehicle.location || vehicle.transmission) && (
+                          <div className="d-flex mb-3">
+                            {vehicle.location && (
+                              <div className="me-3">
+                                <small className="text-muted d-block">
+                                  <FontAwesomeIcon icon={faMapMarkerAlt} className="me-1" />
+                                  Location
+                                </small>
+                                <span>{vehicle.location}</span>
+                              </div>
+                            )}
+                            {vehicle.transmission && (
+                              <div>
+                                <small className="text-muted d-block">
+                                  <FontAwesomeIcon icon={faCog} className="me-1" />
+                                  Transmission
+                                </small>
+                                <span>{vehicle.transmission}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
                         <div className="vehicle-features">
-                          {vehicle.features && vehicle.features.slice(0, 3).map((feature, index) => (
-                            <span key={index} className="vehicle-feature">{feature}</span>
-                          ))}
+                          {vehicle.features && (
+                            Array.isArray(vehicle.features) 
+                              ? vehicle.features.slice(0, 3).map((feature: string, index: number) => (
+                                  <span key={index} className="vehicle-feature">{feature}</span>
+                                ))
+                              : typeof vehicle.features === 'string' 
+                                ? vehicle.features.split(',').slice(0, 3).map((feature: string, index: number) => (
+                                    <span key={index} className="vehicle-feature">{feature.trim()}</span>
+                                  ))
+                                : null
+                          )}
                         </div>
                         
-                        <div className="d-grid gap-2 mt-3">
+                        <div className="d-flex gap-2 mt-3">
                           <Link 
                             to={`/vehicles/${vehicle.id}`} 
-                            className="btn btn-outline-primary"
+                            className="btn btn-outline-primary flex-fill"
                           >
                             View Details
+                          </Link>
+                          <Link 
+                            to={`/booking?vehicle=${vehicle.id}`} 
+                            className="btn btn-primary flex-fill"
+                          >
+                            Book Now
                           </Link>
                         </div>
                       </Card.Body>
@@ -184,8 +231,12 @@ const Home: React.FC = () => {
               ) : (
                 <Col xs={12}>
                   <div className="text-center py-5">
-                    <p>No featured vehicles available at the moment.</p>
-                    <Link to="/vehicles" className="btn btn-primary">
+                    <FontAwesomeIcon icon={faCarAlt} size="4x" className="text-muted mb-3" />
+                    <h4 className="text-muted">No Featured Vehicles Available</h4>
+                    <p className="text-muted mb-4">
+                      We're currently updating our featured collection. Check out all our available vehicles instead!
+                    </p>
+                    <Link to="/vehicles" className="btn btn-primary btn-lg">
                       Browse All Vehicles
                     </Link>
                   </div>
@@ -202,8 +253,61 @@ const Home: React.FC = () => {
         </Container>
       </section>
       
+      {/* Quick Booking CTA Section */}
+      <section className="py-5" style={{ background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)' }}>
+        <Container>
+          <Row className="align-items-center text-white">
+            <Col md={8}>
+              <h3 className="mb-2">Need a Vehicle Right Now?</h3>
+              <p className="mb-0 opacity-75">
+                Skip the browsing and get instant access to available vehicles in your area. 
+                Our quick booking system finds the perfect match for your needs.
+              </p>
+            </Col>
+            <Col md={4} className="text-md-end mt-3 mt-md-0">
+              <Link to="/booking-new" className="btn btn-light btn-lg">
+                <FontAwesomeIcon icon={faTachometerAlt} className="me-2" />
+                Quick Book Now
+              </Link>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+      
+      {/* Statistics Section */}
+      <section className="py-5 bg-light">
+        <Container>
+          <Row className="text-center">
+            <Col md={3} className="mb-4 mb-md-0">
+              <div className="stat-item">
+                <h3 className="display-4 fw-bold text-primary mb-0">500+</h3>
+                <p className="text-muted mb-0">Premium Vehicles</p>
+              </div>
+            </Col>
+            <Col md={3} className="mb-4 mb-md-0">
+              <div className="stat-item">
+                <h3 className="display-4 fw-bold text-primary mb-0">10,000+</h3>
+                <p className="text-muted mb-0">Happy Customers</p>
+              </div>
+            </Col>
+            <Col md={3} className="mb-4 mb-md-0">
+              <div className="stat-item">
+                <h3 className="display-4 fw-bold text-primary mb-0">15+</h3>
+                <p className="text-muted mb-0">City Locations</p>
+              </div>
+            </Col>
+            <Col md={3}>
+              <div className="stat-item">
+                <h3 className="display-4 fw-bold text-primary mb-0">24/7</h3>
+                <p className="text-muted mb-0">Customer Support</p>
+              </div>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+      
       {/* Why Choose Us Section */}
-      <section className="bg-light">
+      <section className="py-5">
         <Container>
           <div className="text-center mb-5">
             <h2>Why Choose AutoHive</h2>

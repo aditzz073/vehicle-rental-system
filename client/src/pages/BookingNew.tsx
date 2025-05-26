@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Alert, Form, InputGroup } from 'react-bootstrap';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Container, Row, Col, Card, Button, Form } from 'react-bootstrap';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -74,6 +74,24 @@ const BookingNew: React.FC = () => {
     specialRequests: ''
   });
 
+  const fetchVehicleDetails = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/vehicles/${vehicleId}`);
+      
+      if (response.data.success) {
+        setVehicle(response.data.vehicle);
+      } else {
+        throw new Error(response.data.message || 'Failed to load vehicle');
+      }
+    } catch (err) {
+      console.error('Error fetching vehicle:', err);
+      setError('Failed to load vehicle details');
+    } finally {
+      setLoading(false);
+    }
+  }, [vehicleId]);
+
   useEffect(() => {
     if (!vehicleId) {
       setError('No vehicle selected');
@@ -81,7 +99,7 @@ const BookingNew: React.FC = () => {
       return;
     }
     fetchVehicleDetails();
-  }, [vehicleId]);
+  }, [vehicleId, fetchVehicleDetails]);
 
   useEffect(() => {
     // Auto-populate pickup/dropoff location when vehicle is loaded
@@ -92,7 +110,7 @@ const BookingNew: React.FC = () => {
         dropoffLocation: vehicle.location
       }));
     }
-  }, [vehicle]);
+  }, [vehicle, formData.pickupLocation]);
 
   const calculateDays = () => {
     if (!formData.startDate || !formData.endDate) return 0;
@@ -150,24 +168,6 @@ const BookingNew: React.FC = () => {
     }
     
     return null;
-  };
-
-  const fetchVehicleDetails = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get(`/vehicles/${vehicleId}`);
-      
-      if (response.data.success) {
-        setVehicle(response.data.vehicle);
-      } else {
-        throw new Error(response.data.message || 'Failed to load vehicle');
-      }
-    } catch (err) {
-      console.error('Error fetching vehicle:', err);
-      setError('Failed to load vehicle details');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleBooking = async () => {
