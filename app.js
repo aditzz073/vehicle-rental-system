@@ -9,7 +9,7 @@ require('dotenv').config();
 
 // Create Express app
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Security middleware
 app.use(helmet({
@@ -29,7 +29,9 @@ app.use(requestLogger);
 // Middleware
 app.use(cors({
   credentials: true,
-  origin: process.env.CLIENT_URL || 'http://localhost:3000'
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -45,11 +47,8 @@ app.use(session({
   }
 }));
 
-// Serve static files
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Serve views directory for layout components
-app.use('/views', express.static(path.join(__dirname, 'views')));
+// Serve static files for API documentation
+app.use('/static', express.static(path.join(__dirname, 'public')));
 
 // Authentication middleware functions
 const isAuthenticated = (req, res, next) => {
@@ -103,66 +102,15 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Legacy routes for frontend compatibility
-app.use('/auth', authRoutes);
-app.use('/vehicles', vehicleRoutes);
-app.use('/rentals', rentalRoutes);
-app.use('/admin', adminRoutes);
-app.use('/reviews', reviewRoutes);
-
-// Frontend routes
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'index.html'));
-});
-
-app.get('/about', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'about.html'));
-});
-
-app.get('/contact', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'contact.html'));
-});
-
-app.get('/terms', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'terms.html'));
-});
-
-app.get('/register', (req, res) => {
-  if (req.session && req.session.user) {
-    return res.redirect('/dashboard');
+// For React single-page application, serve the React app for any non-API route
+app.get('*', (req, res) => {
+  // If this is a development environment, we'll proxy to the React dev server
+  // In production, we'll serve the static build
+  if (process.env.NODE_ENV === 'production') {
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+  } else {
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3001'}${req.originalUrl}`);
   }
-  res.sendFile(path.join(__dirname, 'views', 'register.html'));
-});
-
-app.get('/login', (req, res) => {
-  if (req.session && req.session.user) {
-    return res.redirect('/dashboard');
-  }
-  res.sendFile(path.join(__dirname, 'views', 'login.html'));
-});
-
-app.get('/dashboard', isAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
-});
-
-app.get('/vehicles-list', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'vehicles.html'));
-});
-
-app.get('/vehicle/:id', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'vehicle-detail.html'));
-});
-
-app.get('/book/:id', isAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'booking.html'));
-});
-
-app.get('/booking-new', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'booking-new.html'));
-});
-
-app.get('/rental/:id', isAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'rental-detail.html'));
 });
 
 // Error handling middleware

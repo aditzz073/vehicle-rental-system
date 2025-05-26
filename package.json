@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
+    "client": "cd client && npm start",
+    "dev:full": "concurrently \"npm run dev\" \"npm run client\"",
     "test": "jest",
     "setup-db": "node scripts/setup.js",
     "test:watch": "jest --watch",
@@ -40,6 +42,7 @@
     "winston": "^3.10.0"
   },
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "jest": "^29.6.2",
     "nodemon": "^3.0.1",
     "supertest": "^6.3.3"

@@ -186,7 +186,7 @@ class AuthController {
       }
 
       // Remove password from response
-      const { password_hash, ...userResponse } = user;
+      const { password, ...userResponse } = user;
 
       res.json({
         success: true,
@@ -217,7 +217,7 @@ class AuthController {
       const updatedUser = await User.update(userId, updateData);
 
       // Remove password from response
-      const { password_hash, ...userResponse } = updatedUser;
+      const { password, ...userResponse } = updatedUser;
 
       // Update session
       req.session.user.full_name = updatedUser.full_name;
@@ -269,7 +269,7 @@ class AuthController {
       }
 
       // Verify current password
-      const isCurrentPasswordValid = await bcrypt.compare(current_password, user.password_hash);
+      const isCurrentPasswordValid = await bcrypt.compare(current_password, user.password);
       if (!isCurrentPasswordValid) {
         return res.status(401).json({
           success: false,
@@ -379,7 +379,7 @@ class AuthController {
       if (req.session && req.session.user) {
         const user = await User.findById(req.session.user.id);
         if (user && user.is_active) {
-          const { password_hash, ...userResponse } = user;
+          const { password, ...userResponse } = user;
           return res.json({
             success: true,
             authenticated: true,
@@ -417,7 +417,7 @@ class AuthController {
 
       // Verify password
       const user = await User.findById(userId);
-      const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+      const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
         return res.status(401).json({
           success: false,

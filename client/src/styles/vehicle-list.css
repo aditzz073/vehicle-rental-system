@@ -1,0 +1,99 @@
+/* Vehicle Card Enhancements */
+.vehicle-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.vehicle-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+}
+
+.vehicle-image {
+  height: 200px;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.vehicle-card:hover .vehicle-image {
+  transform: scale(1.05);
+}
+
+.vehicle-price {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.vehicle-specs {
+  padding: 10px 0;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.spec-item {
+  display: flex;
+  align-items: center;
+}
+
+.vehicle-feature {
+  padding: 5px 10px;
+  border-radius: 50px;
+  background-color: rgba(52, 152, 219, 0.1);
+  color: var(--primary-color);
+  font-size: 0.75rem;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  display: inline-block;
+}
+
+/* Availability badges */
+.badge-available {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: var(--success-color);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  z-index: 10;
+}
+
+.badge-unavailable {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: var(--danger-color);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  z-index: 10;
+}
+
+/* Filter sidebar enhancements */
+.filter-sidebar {
+  position: sticky;
+  top: 20px;
+}
+
+.filter-badge {
+  padding: 8px 12px;
+  border-radius: 20px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.filter-badge .close-icon {
+  margin-left: 8px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.filter-badge .close-icon:hover {
+  opacity: 1;
+}
