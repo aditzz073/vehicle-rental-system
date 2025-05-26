@@ -93,11 +93,11 @@ const Home: React.FC = () => {
             </Col>
             <Col md={6} className="animated">
               <img 
-                src="/images/vehicle.png" 
-                alt="Luxury Car" 
+                src="/images/hero-section.webp" 
+                alt="Hero Section" 
                 className="img-fluid rounded shadow"
                 onError={(e) => {
-                  e.currentTarget.src = 'https://placehold.co/600x400?text=Luxury+Vehicle';
+                  e.currentTarget.src = 'https://placehold.co/600x400?text=Hero+Image';
                 }}
               />
             </Col>
@@ -170,7 +170,7 @@ const Home: React.FC = () => {
                           </span>
                         </div>
                         <Card.Title>{vehicle.make} {vehicle.model} ({vehicle.year})</Card.Title>
-                        <div className="vehicle-price mb-3">${vehicle.daily_rate}/day</div>
+                        <div className="vehicle-price mb-3">₹{(parseFloat(vehicle.daily_rate) * 80).toFixed(2)}/day</div>
                         
                         {/* Location and Transmission Info */}
                         {(vehicle.location || vehicle.transmission) && (

@@ -76,7 +76,7 @@ const requestLogger = (req, res, next) => {
             method: req.method,
             url: req.url,
             statusCode: res.statusCode,
-            duration: `${duration}ms`,
+            duration: `₹{(duration * 80).toFixed(2)}ms`,
             userId: req.session?.userId || 'anonymous'
         });
     });

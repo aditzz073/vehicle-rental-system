@@ -1,18 +1,50 @@
 import React from 'react';
-import { Container, Row, Col, Card } from 'react-bootstrap';
+import { Container, Row, Col, Card, Badge, ProgressBar } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHistory, faBullseye, faAward, faUsers, faHandshake, faLeaf } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faHistory, 
+  faBullseye, 
+  faAward, 
+  faUsers, 
+  faHandshake, 
+  faLeaf,
+  faCar,
+  faGlobeAmericas,
+  faShieldAlt,
+  faStar,
+  faCalendarAlt,
+  faThumbsUp
+} from '@fortawesome/free-solid-svg-icons';
 
 const About: React.FC = () => {
   return (
     <>
       {/* Page Header */}
-      <div className="bg-primary text-white py-5">
+      <div className="bg-primary text-white py-5 page-header">
         <Container className="text-center">
-          <h1 className="display-4 fw-bold mb-3">About AutoHive</h1>
-          <p className="lead mb-0">
+          <h1 className="display-4 fw-bold mb-3 fade-in">About AutoHive</h1>
+          <p className="lead mb-4 fade-in">
             Premium vehicle rentals for every journey since 2015
           </p>
+          <Row className="justify-content-center">
+            <Col md={8}>
+              <div className="d-flex justify-content-center gap-4 flex-wrap">
+                <Badge bg="light" text="dark" className="fs-6 px-3 py-2 stats-badge">
+                  <FontAwesomeIcon icon={faCar} className="me-2" />
+                  500+ Vehicles
+                </Badge>
+                <Badge bg="light" text="dark" className="fs-6 px-3 py-2 stats-badge">
+                  <FontAwesomeIcon icon={faUsers} className="me-2" />
+                  10,000+ Customers
+                </Badge>
+                <Badge bg="light" text="dark" className="fs-6 px-3 py-2 stats-badge">
+                  <FontAwesomeIcon icon={faGlobeAmericas} className="me-2" />
+                  15+ Cities
+                </Badge>
+              </div>
+            </Col>
+          </Row>
         </Container>
       </div>
       
@@ -31,27 +63,101 @@ const About: React.FC = () => {
               />
             </Col>
             <Col lg={6}>
-              <h2 className="mb-4">Our Story</h2>
-              <p className="lead text-primary mb-4">
-                From a small fleet to a nationwide premium vehicle rental service
-              </p>
-              <p>
-                AutoHive was founded in 2015 with a simple mission: to provide exceptional 
-                vehicle rental experiences with transparent pricing and superior customer service. 
-                What started as a small fleet of luxury vehicles in San Francisco has grown into 
-                a nationwide operation with thousands of satisfied customers.
-              </p>
-              <p>
-                Our founders, Alex Chen and Sarah Williams, saw an opportunity to disrupt the 
-                traditional car rental industry by focusing on premium vehicles, flexible rental 
-                options, and a tech-forward approach that makes booking and managing rentals 
-                seamless and stress-free.
-              </p>
-              <p>
-                Today, AutoHive continues to lead the industry with innovative solutions, 
-                a diverse fleet of well-maintained vehicles, and our unwavering commitment 
-                to customer satisfaction.
-              </p>
+              <h2 className="mb-4">Our Story</h2>          <p className="lead text-primary mb-4">
+            From a small fleet to a nationwide premium vehicle rental service
+          </p>
+          <p>
+            AutoHive was founded in 2015 with a simple mission: to provide exceptional 
+            vehicle rental experiences with transparent pricing and superior customer service. 
+            What started as a small fleet of luxury vehicles in Bangalore has grown into 
+            a nationwide operation with thousands of satisfied customers across India.
+          </p>
+          <p>
+            Our founders, Alex Chen and Sarah Williams, saw an opportunity to disrupt the 
+            traditional car rental industry by focusing on premium vehicles, flexible rental 
+            options, and a tech-forward approach that makes booking and managing rentals 
+            seamless and stress-free.
+          </p>
+          <p>
+            Today, AutoHive continues to lead the industry with innovative solutions, 
+            a diverse fleet of well-maintained vehicles, and our unwavering commitment 
+            to customer satisfaction. We've expanded from our humble beginnings to serve 
+            customers in over 15 cities across India, with plans for continued growth.
+          </p>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+      
+      {/* Company Milestones */}
+      <section className="py-5 bg-light">
+        <Container>
+          <div className="text-center mb-5">
+            <h2 className="mb-3">Our Journey & Milestones</h2>
+            <p className="lead text-muted">
+              Key achievements that mark our growth and commitment to excellence
+            </p>
+          </div>
+          
+          <Row>
+            <Col lg={3} md={6} className="mb-4">
+              <Card className="border-0 shadow-sm text-center h-100">
+                <Card.Body className="p-4">
+                  <div className="avatar-placeholder mb-3">
+                    <FontAwesomeIcon icon={faCalendarAlt} size="2x" />
+                  </div>
+                  <h3 className="text-primary mb-2">2015</h3>
+                  <h5>Founded</h5>
+                  <p className="small">
+                    AutoHive was established with a vision to revolutionize the vehicle rental industry
+                  </p>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col lg={3} md={6} className="mb-4">
+              <Card className="border-0 shadow-sm text-center h-100">
+                <Card.Body className="p-4">
+                  <div className="avatar-placeholder mb-3">
+                    <FontAwesomeIcon icon={faCar} size="2x" />
+                  </div>
+                  <h3 className="text-primary mb-2">2018</h3>
+                  <h5>500+ Vehicles</h5>
+                  <p className="small">
+                    Expanded our fleet to over 500 premium vehicles across multiple categories
+                  </p>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col lg={3} md={6} className="mb-4">
+              <Card className="border-0 shadow-sm text-center h-100">
+                <Card.Body className="p-4">
+                  <div className="avatar-placeholder mb-3">
+                    <FontAwesomeIcon icon={faAward} size="2x" />
+                  </div>
+                  <h3 className="text-primary mb-2">2021</h3>
+                  <h5>Industry Awards</h5>
+                  <p className="small">
+                    Recognized as "Best Customer Service" and "Innovation Leader" in vehicle rentals
+                  </p>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col lg={3} md={6} className="mb-4">
+              <Card className="border-0 shadow-sm text-center h-100">
+                <Card.Body className="p-4">
+                  <div className="avatar-placeholder mb-3">
+                    <FontAwesomeIcon icon={faGlobeAmericas} size="2x" />
+                  </div>
+                  <h3 className="text-primary mb-2">2025</h3>
+                  <h5>National Presence</h5>
+                  <p className="small">
+                    Expanded to 15+ cities with plans for international growth
+                  </p>
+                </Card.Body>
+              </Card>
             </Col>
           </Row>
         </Container>
@@ -161,6 +267,193 @@ const About: React.FC = () => {
         </Container>
       </section>
       
+      {/* Our Performance & Stats */}
+      <section className="py-5">
+        <Container>
+          <div className="text-center mb-5">
+            <h2 className="mb-3">Our Performance Speaks for Itself</h2>
+            <p className="lead text-muted">
+              Numbers that demonstrate our commitment to excellence
+            </p>
+          </div>
+          
+          <Row>
+            <Col md={6} className="mb-4">
+              <Card className="border-0 shadow-sm h-100">
+                <Card.Body className="p-4">
+                  <h5 className="mb-3">Customer Satisfaction</h5>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span>Overall Rating</span>
+                    <div>
+                      <span className="me-2">4.8/5.0</span>
+                      <FontAwesomeIcon icon={faStar} className="text-warning" />
+                      <FontAwesomeIcon icon={faStar} className="text-warning" />
+                      <FontAwesomeIcon icon={faStar} className="text-warning" />
+                      <FontAwesomeIcon icon={faStar} className="text-warning" />
+                      <FontAwesomeIcon icon={faStar} className="text-warning" />
+                    </div>
+                  </div>
+                  <ProgressBar now={96} className="mb-3" />
+                  
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span>Customer Retention</span>
+                    <span>94%</span>
+                  </div>
+                  <ProgressBar now={94} className="mb-3" />
+                  
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span>Repeat Customers</span>
+                    <span>87%</span>
+                  </div>
+                  <ProgressBar now={87} />
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6} className="mb-4">
+              <Card className="border-0 shadow-sm h-100">
+                <Card.Body className="p-4">
+                  <h5 className="mb-3">Operational Excellence</h5>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span>Vehicle Availability</span>
+                    <span>99.2%</span>
+                  </div>
+                  <ProgressBar now={99.2} className="mb-3" />
+                  
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span>On-Time Delivery</span>
+                    <span>98.5%</span>
+                  </div>
+                  <ProgressBar now={98.5} className="mb-3" />
+                  
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span>Fleet Utilization</span>
+                    <span>85%</span>
+                  </div>
+                  <ProgressBar now={85} />
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+      
+      {/* Why Choose AutoHive */}
+      <section className="py-5 bg-light">
+        <Container>
+          <div className="text-center mb-5">
+            <h2 className="mb-3">Why Choose AutoHive?</h2>
+            <p className="lead text-muted">
+              What sets us apart from other vehicle rental companies
+            </p>
+          </div>
+          
+          <Row>
+            <Col lg={4} className="mb-4">
+              <div className="d-flex">
+                <div className="flex-shrink-0 me-3">
+                  <div className="avatar-placeholder">
+                    <FontAwesomeIcon icon={faShieldAlt} />
+                  </div>
+                </div>
+                <div>
+                  <h5>Comprehensive Insurance</h5>
+                  <p className="text-muted">
+                    Every rental includes full coverage insurance with zero deductible, 
+                    giving you complete peace of mind on the road.
+                  </p>
+                </div>
+              </div>
+            </Col>
+            
+            <Col lg={4} className="mb-4">
+              <div className="d-flex">
+                <div className="flex-shrink-0 me-3">
+                  <div className="avatar-placeholder">
+                    <FontAwesomeIcon icon={faThumbsUp} />
+                  </div>
+                </div>
+                <div>
+                  <h5>24/7 Support</h5>
+                  <p className="text-muted">
+                    Our dedicated customer support team is available round the clock 
+                    to assist with any questions or emergencies.
+                  </p>
+                </div>
+              </div>
+            </Col>
+            
+            <Col lg={4} className="mb-4">
+              <div className="d-flex">
+                <div className="flex-shrink-0 me-3">
+                  <div className="avatar-placeholder">
+                    <FontAwesomeIcon icon={faLeaf} />
+                  </div>
+                </div>
+                <div>
+                  <h5>Eco-Friendly Options</h5>
+                  <p className="text-muted">
+                    Choose from our growing fleet of electric and hybrid vehicles 
+                    to reduce your environmental impact.
+                  </p>
+                </div>
+              </div>
+            </Col>
+            
+            <Col lg={4} className="mb-4">
+              <div className="d-flex">
+                <div className="flex-shrink-0 me-3">
+                  <div className="avatar-placeholder">
+                    <FontAwesomeIcon icon={faCar} />
+                  </div>
+                </div>
+                <div>
+                  <h5>Premium Fleet</h5>
+                  <p className="text-muted">
+                    All vehicles are less than 3 years old and undergo rigorous 
+                    maintenance checks to ensure optimal performance.
+                  </p>
+                </div>
+              </div>
+            </Col>
+            
+            <Col lg={4} className="mb-4">
+              <div className="d-flex">
+                <div className="flex-shrink-0 me-3">
+                  <div className="avatar-placeholder">
+                    <FontAwesomeIcon icon={faHandshake} />
+                  </div>
+                </div>
+                <div>
+                  <h5>Flexible Terms</h5>
+                  <p className="text-muted">
+                    From hourly to monthly rentals, we offer flexible booking 
+                    options to suit your specific needs and budget.
+                  </p>
+                </div>
+              </div>
+            </Col>
+            
+            <Col lg={4} className="mb-4">
+              <div className="d-flex">
+                <div className="flex-shrink-0 me-3">
+                  <div className="avatar-placeholder">
+                    <FontAwesomeIcon icon={faAward} />
+                  </div>
+                </div>
+                <div>
+                  <h5>Award-Winning Service</h5>
+                  <p className="text-muted">
+                    Recognized by industry leaders for our outstanding customer 
+                    service and innovative approach to vehicle rentals.
+                  </p>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+      
       {/* Our Team */}
       <section className="py-5">
         <Container>
@@ -262,9 +555,12 @@ const About: React.FC = () => {
           <p className="lead mb-4">
             Join thousands of satisfied customers who trust us for their transportation needs.
           </p>
-          <a href="/vehicles" className="btn btn-light btn-lg px-5">
+          <Link to="/vehicles" className="btn btn-light btn-lg px-5 me-3">
             Browse Our Vehicles
-          </a>
+          </Link>
+          <Link to="/contact" className="btn btn-outline-light btn-lg px-5">
+            Contact Us
+          </Link>
         </Container>
       </section>
     </>

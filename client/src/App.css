@@ -159,3 +159,193 @@
   margin: 0 auto;
   color: white;
 }
+
+/* Enhanced Contact & About Page Styling */
+.page-header {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+  z-index: 1;
+}
+
+.page-header .container {
+  position: relative;
+  z-index: 2;
+}
+
+.contact-card, .about-card {
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.contact-card:hover, .about-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 123, 255, 0.1) !important;
+}
+
+.milestone-card {
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+
+.milestone-card:hover {
+  border-left-color: #007bff;
+  transform: translateX(5px);
+  background-color: #f8f9fa;
+}
+
+.stats-badge {
+  transition: all 0.3s ease;
+}
+
+.stats-badge:hover {
+  transform: scale(1.05);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+}
+
+.quick-contact-card {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-contact-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.quick-contact-card:hover::before {
+  left: 100%;
+}
+
+.quick-contact-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.faq-section .card {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.progress-animated {
+  animation: progressFill 2s ease-in-out;
+}
+
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--progress-width);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.contact-form .btn {
+  transition: all 0.3s ease;
+}
+
+.contact-form .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+/* Mobile responsiveness enhancements */
+@media (max-width: 768px) {
+  .page-header .display-4 {
+    font-size: 2.5rem;
+  }
+  
+  .stats-badge {
+    margin-bottom: 0.5rem;
+  }
+  
+  .milestone-card {
+    margin-bottom: 1rem;
+  }
+  
+  .quick-contact-card {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Success modal enhancements */
+.modal-success .modal-header {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.modal-success .modal-body {
+  background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+}
+
+/* Team card enhancements */
+.team-card {
+  transition: all 0.3s ease;
+  border: none;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.team-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.team-card .card-img-top {
+  transition: transform 0.3s ease;
+}
+
+.team-card:hover .card-img-top {
+  transform: scale(1.05);
+}
+
+/* Map container styling */
+.map-container {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.map-container iframe {
+  filter: grayscale(0.3);
+  transition: filter 0.3s ease;
+}
+
+.map-container:hover iframe {
+  filter: grayscale(0);
+}

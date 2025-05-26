@@ -79,7 +79,7 @@ class EmailService {
                         <p><strong>Vehicle:</strong> ${booking.vehicle_name}</p>
                         <p><strong>Pickup Date:</strong> ${new Date(booking.start_date).toLocaleDateString()}</p>
                         <p><strong>Return Date:</strong> ${new Date(booking.end_date).toLocaleDateString()}</p>
-                        <p><strong>Total Cost:</strong> $${booking.total_cost}</p>
+                        <p><strong>Total Cost:</strong> ₹${(booking.total_cost * 80).toFixed(2)}</p>
                         <p><strong>Status:</strong> ${booking.status}</p>
                     </div>
                     

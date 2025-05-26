@@ -20,10 +20,10 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Debug from './pages/Debug';
 import BookingNew from './pages/BookingNew';
+import About from './pages/About';
+import Contact from './pages/Contact';
 
 // Placeholder components for pages not yet fully implemented
-const About = () => <div className="container py-5"><h2>About Us</h2><p>This page is coming soon...</p></div>;
-const Contact = () => <div className="container py-5"><h2>Contact Us</h2><p>This page is coming soon...</p></div>;
 const Terms = () => <div className="container py-5"><h2>Terms of Service</h2><p>This page is coming soon...</p></div>;
 
 function App() {
