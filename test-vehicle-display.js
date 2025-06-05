@@ -20,7 +20,7 @@ async function testVehicleDisplay() {
       const ratingFormatted = rating.toFixed(1);
       console.log(`   Rating formatted: ${ratingFormatted}`);
       
-      console.log(`   Daily rate display: $${vehicle.daily_rate}/day`);
+      console.log(`   Daily rate display: ₹${(vehicle.daily_rate * 80).toFixed(2)}/day`);
       
       console.log('\n🎉 All data types and formatting working correctly!');
     } else {

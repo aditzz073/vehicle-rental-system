@@ -375,7 +375,7 @@ class Payment {
     if (!amount || amount <= 0) {
       throw new Error('Payment amount must be greater than 0');
     }
-    if (amount > 50000) { // Max $50,000 per transaction
+    if (amount > 4000000) { // Max ₹40,00,000 per transaction (equivalent to $50,000)
       throw new Error('Payment amount exceeds maximum limit');
     }
     return true;
@@ -383,9 +383,9 @@ class Payment {
 
   // Get formatted amount
   getFormattedAmount() {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR'
     }).format(this.amount);
   }
 }
