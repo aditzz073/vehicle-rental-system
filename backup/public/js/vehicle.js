@@ -53,8 +53,8 @@ function displayVehicleDetails(vehicle) {
     // Fill in the vehicle details
     document.getElementById('vehicle-title').textContent = `${vehicle.make} ${vehicle.model}`;
     document.getElementById('vehicle-subtitle').textContent = `${vehicle.year} • ${vehicle.category} • ${vehicle.transmission || 'Automatic'}`;
-    document.getElementById('vehicle-price').textContent = `₹${vehicle.daily_rate}`;
-    document.getElementById('base-rate').textContent = `₹${vehicle.daily_rate}`;
+    document.getElementById('vehicle-price').textContent = `₹${(vehicle.daily_rate * 80).toFixed(2)}`;
+    document.getElementById('base-rate').textContent = `₹${(vehicle.daily_rate * 80).toFixed(2)}`;
     
     // Set the main image
     const mainImage = document.getElementById('main-vehicle-image');
@@ -109,7 +109,7 @@ function displayVehicleDetails(vehicle) {
         make: vehicle.make,
         model: vehicle.model,
         dailyRate: vehicle.daily_rate,
-        depositAmount: vehicle.security_deposit || 10000
+        depositAmount: (vehicle.security_deposit || 10000) * 80 // Convert to rupees
     };
     // The HTML block above was invalid JavaScript and has been removed.
     // If you want to render this HTML, assign it to a variable as a template string and inject it into the DOM as needed.
@@ -307,10 +307,10 @@ function displayBookingSummary(calculation) {
     
     summaryDetails.innerHTML = `
         <strong>Duration:</strong> ${calculation.days} days<br>
-        <strong>Daily Rate:</strong> ₹${calculation.daily_rate}<br>
-        <strong>Subtotal:</strong> ₹${calculation.subtotal}<br>
-        <strong>Tax:</strong> ₹${calculation.tax}<br>
-        <strong>Total Amount:</strong> ₹${calculation.total_amount}
+        <strong>Daily Rate:</strong> ₹${(calculation.daily_rate * 80).toFixed(2)}<br>
+        <strong>Subtotal:</strong> ₹${(calculation.subtotal * 80).toFixed(2)}<br>
+        <strong>Tax:</strong> ₹${(calculation.tax * 80).toFixed(2)}<br>
+        <strong>Total Amount:</strong> ₹${(calculation.total_amount * 80).toFixed(2)}
     `;
     
     summaryContainer.classList.remove('d-none');

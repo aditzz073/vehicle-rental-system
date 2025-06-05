@@ -173,7 +173,7 @@ const VehicleDetail: React.FC = () => {
             </Col>
             <Col xs="auto">
               <div className="text-end">
-                <div className="vehicle-price fs-3 fw-bold mb-2">${vehicle.daily_rate}/day</div>
+                <div className="vehicle-price fs-3 fw-bold mb-2">₹{(parseFloat(vehicle.daily_rate) * 80).toFixed(2)}/day</div>
                 <Badge bg={vehicle.availability ? 'success' : 'danger'} className="px-3 py-2">
                   {vehicle.availability ? 'Available' : 'Not Available'}
                 </Badge>
@@ -366,7 +366,7 @@ const VehicleDetail: React.FC = () => {
                             </span>
                           </div>
                           <Card.Title>{vehicle.make} {vehicle.model}</Card.Title>
-                          <div className="vehicle-price mb-3">${vehicle.daily_rate}/day</div>
+                          <div className="vehicle-price mb-3">₹{(parseFloat(vehicle.daily_rate) * 80).toFixed(2)}/day</div>
                           <Link 
                             to={`/vehicles/${vehicle.id}`} 
                             className="btn btn-outline-primary w-100"
@@ -433,7 +433,7 @@ const VehicleDetail: React.FC = () => {
               <Card.Footer className="bg-white">
                 <div className="d-flex justify-content-between align-items-center py-2">
                   <span className="text-muted">Price</span>
-                  <span className="vehicle-price fs-4">${vehicle.daily_rate}/day</span>
+                  <span className="vehicle-price fs-4">₹{(parseFloat(vehicle.daily_rate) * 80).toFixed(2)}/day</span>
                 </div>
                 <div className="d-flex justify-content-between align-items-center py-2 border-top">
                   <span className="text-muted">Location</span>

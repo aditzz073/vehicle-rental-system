@@ -124,7 +124,7 @@ const BookingNew: React.FC = () => {
   const calculateTotal = () => {
     if (!vehicle) return 0;
     const days = calculateDays();
-    const dailyRate = parseFloat(vehicle.daily_rate);
+    const dailyRate = parseFloat(vehicle.daily_rate) * 80; // Convert to rupees
     return days * dailyRate;
   };
 
@@ -274,8 +274,7 @@ const BookingNew: React.FC = () => {
                 </Col>
                 <Col md={4} className="text-md-end">
                   <h3 className="text-success">
-                    <FontAwesomeIcon icon={faDollarSign} />
-                    {vehicle.daily_rate}/day
+                    ₹{(parseFloat(vehicle.daily_rate) * 80).toFixed(2)}/day
                   </h3>
                   <span className="badge bg-success">Available</span>
                 </Col>
@@ -450,14 +449,13 @@ const BookingNew: React.FC = () => {
                   </div>
                   <div className="mb-2 d-flex justify-content-between">
                     <span>Daily Rate:</span>
-                    <span>${vehicle.daily_rate}</span>
+                    <span>₹{(parseFloat(vehicle.daily_rate) * 80).toFixed(2)}</span>
                   </div>
                   <hr />
                   <div className="d-flex justify-content-between mb-3">
                     <strong>Total Cost:</strong>
                     <strong className="text-success">
-                      <FontAwesomeIcon icon={faDollarSign} />
-                      {calculateTotal().toFixed(2)}
+                      ₹{calculateTotal().toFixed(2)}
                     </strong>
                   </div>
                 </>
@@ -476,7 +474,7 @@ const BookingNew: React.FC = () => {
                     Processing...
                   </>
                 ) : (
-                  `Confirm Booking - $${calculateTotal().toFixed(2)}`
+                  `Confirm Booking - ₹${calculateTotal().toFixed(2)}`
                 )}
               </Button>
               

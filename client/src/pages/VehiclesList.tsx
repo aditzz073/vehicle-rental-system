@@ -349,23 +349,23 @@ const VehiclesList: React.FC = () => {
                   
                   {/* Price Range */}
                   <Form.Group className="mb-3">
-                    <Form.Label>Price Range ($/day)</Form.Label>
+                    <Form.Label>Price Range (₹/day)</Form.Label>
                     <div className="d-flex align-items-center">
                       <Form.Control
                         type="number"
-                        min={priceRange.min}
-                        max={selectedMaxPrice}
-                        value={selectedMinPrice}
-                        onChange={(e) => setSelectedMinPrice(parseInt(e.target.value))}
+                        min={priceRange.min * 80}
+                        max={selectedMaxPrice * 80}
+                        value={selectedMinPrice * 80}
+                        onChange={(e) => setSelectedMinPrice(parseInt(e.target.value) / 80)}
                         className="me-2"
                       />
                       <span>to</span>
                       <Form.Control
                         type="number"
-                        min={selectedMinPrice}
-                        max={priceRange.max}
-                        value={selectedMaxPrice}
-                        onChange={(e) => setSelectedMaxPrice(parseInt(e.target.value))}
+                        min={selectedMinPrice * 80}
+                        max={priceRange.max * 80}
+                        value={selectedMaxPrice * 80}
+                        onChange={(e) => setSelectedMaxPrice(parseInt(e.target.value) / 80)}
                         className="ms-2"
                       />
                     </div>
@@ -438,7 +438,7 @@ const VehiclesList: React.FC = () => {
                   
                   {(selectedMinPrice > priceRange.min || selectedMaxPrice < priceRange.max) && (
                     <Badge bg="primary" className="p-2">
-                      Price: ${selectedMinPrice} - ${selectedMaxPrice}/day
+                      Price: ₹{(selectedMinPrice * 80).toFixed(0)} - ₹{(selectedMaxPrice * 80).toFixed(0)}/day
                       <Button 
                         variant="link" 
                         className="p-0 ms-2 text-white" 
@@ -511,7 +511,7 @@ const VehiclesList: React.FC = () => {
                               </span>
                             </div>
                             <Card.Title>{vehicle.make} {vehicle.model} ({vehicle.year})</Card.Title>
-                            <div className="vehicle-price mb-3">${vehicle.daily_rate}/day</div>
+                            <div className="vehicle-price mb-3">₹{(parseFloat(String(vehicle.daily_rate)) * 80).toFixed(2)}/day</div>
                             
                             <div className="d-flex mb-3">
                               <div className="me-3">

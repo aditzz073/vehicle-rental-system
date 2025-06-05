@@ -129,7 +129,7 @@ function displayFeaturedVehicles(vehicles) {
                     <h5 class="card-title">${vehicle.make} ${vehicle.model}</h5>
                     <p class="card-text">${vehicle.year} • ${vehicle.category}</p>
                     <p class="card-text">
-                        <span class="text-primary fw-bold">₹${vehicle.daily_rate}/day</span>
+                        <span class="text-primary fw-bold">₹${(vehicle.daily_rate * 80).toFixed(2)}/day</span>
                     </p>
                     <div class="d-flex justify-content-between align-items-center">
                         <small class="text-muted">
@@ -212,7 +212,7 @@ function displayVehiclesList(vehicles) {
                     <h6 class="card-title">${vehicle.make} ${vehicle.model}</h6>
                     <p class="card-text small">${vehicle.year} • ${vehicle.category}</p>
                     <p class="card-text">
-                        <span class="text-primary fw-bold">₹${vehicle.daily_rate}/day</span>
+                        <span class="text-primary fw-bold">₹${(vehicle.daily_rate * 80).toFixed(2)}/day</span>
                     </p>
                     <div class="d-flex justify-content-between align-items-center">
                         <small class="text-muted">
@@ -344,7 +344,7 @@ function displayUserRentals(rentals) {
                     <p class="card-text">
                         <strong>Dates:</strong> ${new Date(rental.start_date).toLocaleDateString()} - ${new Date(rental.end_date).toLocaleDateString()}<br>
                         <strong>Status:</strong> <span class="badge bg-${getStatusBadgeColor(rental.status)}">${rental.status}</span><br>
-                        <strong>Total:</strong> ₹${rental.total_amount}
+                        <strong>Total:</strong> ₹${(rental.total_amount * 80).toFixed(2)}
                     </p>
                     <a href="/rental/${rental.rental_id}" class="btn btn-sm btn-outline-primary">View Details</a>
                 </div>

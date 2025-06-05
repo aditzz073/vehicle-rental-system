@@ -3,6 +3,7 @@ const Vehicle = require('../models/Vehicle');
 const Rental = require('../models/Rental');
 const Payment = require('../models/Payment');
 const Review = require('../models/Review');
+const { getFileUrl, deleteFile } = require('../middleware/upload');
 
 class AdminController {
   // Dashboard overview
@@ -227,6 +228,11 @@ class AdminController {
     try {
       const vehicleData = req.body;
 
+      // Handle uploaded image if present
+      if (req.file) {
+        vehicleData.image_url = getFileUrl(req, req.file.filename);
+      }
+
       // Validation
       const requiredFields = ['make', 'model', 'year', 'category', 'daily_rate', 'location'];
       for (const field of requiredFields) {
@@ -260,6 +266,11 @@ class AdminController {
     try {
       const { id } = req.params;
       const updateData = req.body;
+
+      // Handle uploaded image if present
+      if (req.file) {
+        updateData.image_url = getFileUrl(req, req.file.filename);
+      }
 
       // Remove fields that shouldn't be updated directly
       delete updateData.id;
@@ -673,6 +684,111 @@ class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to export data',
+        error: error.message
+      });
+    }
+  }
+
+  // Vehicle image upload methods
+  static async uploadVehicleImages(req, res) {
+    try {
+      const { id } = req.params;
+
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No images provided'
+        });
+      }
+
+      // Verify vehicle exists
+      const vehicle = await Vehicle.findById(id);
+      if (!vehicle) {
+        // Clean up uploaded files if vehicle doesn't exist
+        req.files.forEach(file => deleteFile(file.filename));
+        return res.status(404).json({
+          success: false,
+          message: 'Vehicle not found'
+        });
+      }
+
+      // Generate URLs for uploaded images
+      const imageUrls = req.files.map(file => getFileUrl(req, file.filename));
+
+      // Update vehicle with new images (assuming we store multiple images as JSON array)
+      const existingImages = vehicle.images ? JSON.parse(vehicle.images) : [];
+      const updatedImages = [...existingImages, ...imageUrls];
+
+      await Vehicle.update(id, { images: JSON.stringify(updatedImages) });
+
+      res.json({
+        success: true,
+        message: 'Images uploaded successfully',
+        images: imageUrls,
+        total_images: updatedImages.length
+      });
+
+    } catch (error) {
+      console.error('Upload vehicle images error:', error);
+      
+      // Clean up uploaded files on error
+      if (req.files) {
+        req.files.forEach(file => deleteFile(file.filename));
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload images',
+        error: error.message
+      });
+    }
+  }
+
+  static async deleteVehicleImage(req, res) {
+    try {
+      const { id, imageId } = req.params;
+
+      // Verify vehicle exists
+      const vehicle = await Vehicle.findById(id);
+      if (!vehicle) {
+        return res.status(404).json({
+          success: false,
+          message: 'Vehicle not found'
+        });
+      }
+
+      const existingImages = vehicle.images ? JSON.parse(vehicle.images) : [];
+      const imageIndex = parseInt(imageId);
+
+      if (imageIndex < 0 || imageIndex >= existingImages.length) {
+        return res.status(404).json({
+          success: false,
+          message: 'Image not found'
+        });
+      }
+
+      // Extract filename from URL and delete file
+      const imageUrl = existingImages[imageIndex];
+      const filename = imageUrl.split('/').pop();
+      deleteFile(filename);
+
+      // Remove image from array
+      existingImages.splice(imageIndex, 1);
+
+      // Update vehicle
+      await Vehicle.update(id, { images: JSON.stringify(existingImages) });
+
+      res.json({
+        success: true,
+        message: 'Image deleted successfully',
+        remaining_images: existingImages.length
+      });
+
+    } catch (error) {
+      console.error('Delete vehicle image error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete image',
         error: error.message
       });
     }

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const AdminController = require('../controllers/adminController');
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
+const { uploadSingle, uploadMultiple, handleUploadError } = require('../middleware/upload');
 
 // Apply authentication and admin middleware to all routes
 router.use(isAuthenticated);
@@ -21,9 +22,13 @@ router.put('/users/bulk', AdminController.bulkUpdateUsers);
 
 // Vehicle management
 router.get('/vehicles', AdminController.getAllVehicles);
-router.post('/vehicles', AdminController.createVehicle);
-router.put('/vehicles/:id', AdminController.updateVehicle);
+router.post('/vehicles', uploadSingle, AdminController.createVehicle, handleUploadError);
+router.put('/vehicles/:id', uploadSingle, AdminController.updateVehicle, handleUploadError);
 router.delete('/vehicles/:id', AdminController.deleteVehicle);
+
+// Vehicle image upload routes
+router.post('/vehicles/:id/images', uploadMultiple, AdminController.uploadVehicleImages, handleUploadError);
+router.delete('/vehicles/:id/images/:imageId', AdminController.deleteVehicleImage);
 
 // Rental management
 router.get('/rentals', AdminController.getAllRentals);

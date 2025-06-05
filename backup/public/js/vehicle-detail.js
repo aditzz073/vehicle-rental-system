@@ -53,8 +53,8 @@ function displayVehicleDetails(vehicle) {
     // Fill in the vehicle details
     document.getElementById('vehicle-title').textContent = `${vehicle.make} ${vehicle.model}`;
     document.getElementById('vehicle-subtitle').textContent = `${vehicle.year} • ${vehicle.category} • ${vehicle.transmission || 'Automatic'}`;
-    document.getElementById('vehicle-price').textContent = `₹${vehicle.daily_rate}`;
-    document.getElementById('base-rate').textContent = `₹${vehicle.daily_rate}`;
+    document.getElementById('vehicle-price').textContent = `₹${(vehicle.daily_rate * 80).toFixed(2)}`;
+    document.getElementById('base-rate').textContent = `₹${(vehicle.daily_rate * 80).toFixed(2)}`;
     
     // Set the main image
     const mainImage = document.getElementById('main-vehicle-image');
@@ -109,7 +109,7 @@ function displayVehicleDetails(vehicle) {
         make: vehicle.make,
         model: vehicle.model,
         dailyRate: vehicle.daily_rate,
-        depositAmount: vehicle.security_deposit || 10000
+        depositAmount: (vehicle.security_deposit || 10000) * 80 // Convert to rupees
     };
 }
 
@@ -398,16 +398,16 @@ function updateBookingCalculation() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     // Calculate base rate
-    const baseRate = window.vehicleData.dailyRate * diffDays;
-    document.getElementById('base-rate').textContent = `₹${baseRate}`;
+    const baseRate = (window.vehicleData.dailyRate * 80) * diffDays; // Convert to rupees
+    document.getElementById('base-rate').textContent = `₹${baseRate.toFixed(2)}`;
     
     // Calculate addons
     let addonsTotal = 0;
     
-    if (document.getElementById('addon-gps')?.checked) addonsTotal += 300 * diffDays;
-    if (document.getElementById('addon-child-seat')?.checked) addonsTotal += 200 * diffDays;
-    if (document.getElementById('addon-additional-driver')?.checked) addonsTotal += 500 * diffDays;
-    if (document.getElementById('addon-premium-insurance')?.checked) addonsTotal += 800 * diffDays;
+    if (document.getElementById('addon-gps')?.checked) addonsTotal += (300 * 80 / 80) * diffDays; // Already in rupees
+    if (document.getElementById('addon-child-seat')?.checked) addonsTotal += (200 * 80 / 80) * diffDays; // Already in rupees
+    if (document.getElementById('addon-additional-driver')?.checked) addonsTotal += (500 * 80 / 80) * diffDays; // Already in rupees
+    if (document.getElementById('addon-premium-insurance')?.checked) addonsTotal += (800 * 80 / 80) * diffDays; // Already in rupees
     
     document.getElementById('addons-price').textContent = `₹${addonsTotal}`;
     
@@ -461,7 +461,7 @@ function displaySimilarVehicles(vehicles, currentVehicleId) {
             <div class="featured-vehicle-card shadow-sm">
                 <div class="position-relative overflow-hidden">
                     <img src="${vehicle.image_url || '/images/vehicle.png'}" class="featured-vehicle-image w-100" alt="${vehicle.make} ${vehicle.model}">
-                    <div class="featured-vehicle-price">₹${vehicle.daily_rate}/day</div>
+                    <div class="featured-vehicle-price">₹${(vehicle.daily_rate * 80).toFixed(2)}/day</div>
                 </div>
                 <div class="featured-vehicle-content">
                     <h5 class="featured-vehicle-title">${vehicle.make} ${vehicle.model}</h5>

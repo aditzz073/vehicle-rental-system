@@ -66,7 +66,7 @@ function populateRentalDetails() {
     document.getElementById('vehicle-capacity').textContent = rentalData.vehicle.capacity;
     document.getElementById('vehicle-fuel').textContent = rentalData.vehicle.fuel_type || 'Gasoline';
     document.getElementById('vehicle-transmission').textContent = rentalData.vehicle.transmission || 'Automatic';
-    document.getElementById('vehicle-rate').textContent = `$${rentalData.vehicle.daily_rate}/day`;
+    document.getElementById('vehicle-rate').textContent = `₹${(rentalData.vehicle.daily_rate * 80).toFixed(2)}/day`;
     
     // Rental information
     document.getElementById('pickup-date').textContent = formatDate(rentalData.start_date);
@@ -88,10 +88,10 @@ function populateRentalDetails() {
     }
     
     // Payment summary
-    document.getElementById('payment-subtotal').textContent = `$${(rentalData.total_amount - rentalData.tax - (rentalData.services_cost || 0)).toFixed(2)}`;
-    document.getElementById('payment-services').textContent = `$${(rentalData.services_cost || 0).toFixed(2)}`;
-    document.getElementById('payment-tax').textContent = `$${(rentalData.tax || 0).toFixed(2)}`;
-    document.getElementById('payment-total').textContent = `$${rentalData.total_amount}`;
+    document.getElementById('payment-subtotal').textContent = `₹${((rentalData.total_amount - rentalData.tax - (rentalData.services_cost || 0)) * 80).toFixed(2)}`;
+    document.getElementById('payment-services').textContent = `₹${((rentalData.services_cost || 0) * 80).toFixed(2)}`;
+    document.getElementById('payment-tax').textContent = `₹${((rentalData.tax || 0) * 80).toFixed(2)}`;
+    document.getElementById('payment-total').textContent = `₹${(rentalData.total_amount * 80).toFixed(2)}`;
     
     // Customer information
     document.getElementById('customer-name').textContent = rentalData.user.full_name;

@@ -34,7 +34,7 @@ async function updateVehicleImages() {
         const success = await Vehicle.update(vehicleId, updateData);
         
         if (success) {
-          console.log(`✅ Updated ${vehicle.make} ${vehicle.model} with image: ₹{(imageUrl * 80).toFixed(2)}`);
+          console.log(`✅ Updated ${vehicle.make} ${vehicle.model} with image: ${imageUrl}`);
         } else {
           console.log(`❌ Failed to update ${vehicle.make} ${vehicle.model}`);
         }

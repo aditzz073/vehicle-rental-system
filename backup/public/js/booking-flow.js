@@ -284,7 +284,7 @@ function createVehicleCard(vehicle) {
                 </div>
                 <div class="vehicle-card-price">
                     <div>
-                        <span class="price-amount">$${vehicle.daily_rate}</span>
+                        <span class="price-amount">₹${(vehicle.daily_rate * 80).toFixed(2)}</span>
                         <span class="price-period">/ day</span>
                     </div>
                     <button class="btn btn-sm btn-primary select-vehicle-btn">
@@ -404,23 +404,22 @@ function updatePricing() {
     const subtotalWithServices = subtotal + servicesCost;
     const tax = subtotalWithServices * 0.1; // 10% tax
     const total = subtotalWithServices + tax;
-    
-    // Update display
-    document.getElementById('daily-rate').textContent = `$${dailyRate.toFixed(2)}`;
+     // Update display
+    document.getElementById('daily-rate').textContent = `₹${(dailyRate * 80).toFixed(2)}`;
     document.getElementById('num-days').textContent = daysDiff;
-    document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
-    document.getElementById('services-cost').textContent = `$${servicesCost.toFixed(2)}`;
-    document.getElementById('tax-amount').textContent = `$${tax.toFixed(2)}`;
-    document.getElementById('total-amount').textContent = `$${total.toFixed(2)}`;
-    
+    document.getElementById('subtotal').textContent = `₹${(subtotal * 80).toFixed(2)}`;
+    document.getElementById('services-cost').textContent = `₹${(servicesCost * 80).toFixed(2)}`;
+    document.getElementById('tax-amount').textContent = `₹${(tax * 80).toFixed(2)}`;
+    document.getElementById('total-amount').textContent = `₹${(total * 80).toFixed(2)}`;
+
     // Update booking data
     bookingData = {
         ...bookingData,
         days: daysDiff,
-        subtotal: subtotal,
-        services_cost: servicesCost,
-        tax: tax,
-        total_amount: total,
+        subtotal: subtotal * 80,
+        services_cost: servicesCost * 80,
+        tax: tax * 80,
+        total_amount: total * 80,
         additional_services: Array.from(selectedServices).map(s => s.value)
     };
 }

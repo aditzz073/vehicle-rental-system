@@ -60,7 +60,7 @@ function populateVehicleDetails() {
     document.getElementById('vehicle-category').textContent = vehicleData.category;
     document.getElementById('vehicle-year').textContent = vehicleData.year;
     document.getElementById('vehicle-capacity').textContent = vehicleData.capacity;
-    document.getElementById('daily-rate').textContent = `$${vehicleData.daily_rate}`;
+    document.getElementById('daily-rate').textContent = `₹${(vehicleData.daily_rate * 80).toFixed(2)}`;
 }
 
 function initializeFormHandlers() {
@@ -136,7 +136,7 @@ function updatePricing() {
     }
     
     const dailyRate = parseFloat(vehicleData.daily_rate);
-    const subtotal = dailyRate * daysDiff;
+    const subtotal = (dailyRate * 80) * daysDiff; // Convert to rupees
     
     // Calculate additional services cost
     let servicesCost = 0;
@@ -145,16 +145,16 @@ function updatePricing() {
     selectedServices.forEach(service => {
         switch(service.value) {
             case 'insurance':
-                servicesCost += 25 * daysDiff;
+                servicesCost += (25 * 80) * daysDiff; // Convert to rupees
                 break;
             case 'gps':
-                servicesCost += 10 * daysDiff;
+                servicesCost += (10 * 80) * daysDiff; // Convert to rupees
                 break;
             case 'driver':
-                servicesCost += 100 * daysDiff;
+                servicesCost += (100 * 80) * daysDiff; // Convert to rupees
                 break;
             case 'delivery':
-                servicesCost += 50; // One-time fee
+                servicesCost += (50 * 80); // One-time fee in rupees
                 break;
         }
     });
@@ -165,11 +165,11 @@ function updatePricing() {
     
     // Update display
     document.getElementById('num-days').textContent = daysDiff;
-    document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
-    document.getElementById('services-cost').textContent = `$${servicesCost.toFixed(2)}`;
-    document.getElementById('tax-amount').textContent = `$${tax.toFixed(2)}`;
-    document.getElementById('total-amount').textContent = `$${total.toFixed(2)}`;
-    document.getElementById('modal-total').textContent = `$${total.toFixed(2)}`;
+    document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('services-cost').textContent = `₹${servicesCost.toFixed(2)}`;
+    document.getElementById('tax-amount').textContent = `₹${tax.toFixed(2)}`;
+    document.getElementById('total-amount').textContent = `₹${total.toFixed(2)}`;
+    document.getElementById('modal-total').textContent = `₹${total.toFixed(2)}`;
     
     // Store booking data
     bookingData = {
@@ -188,11 +188,11 @@ function updatePricing() {
 
 function resetPricing() {
     document.getElementById('num-days').textContent = '0';
-    document.getElementById('subtotal').textContent = '$0';
-    document.getElementById('services-cost').textContent = '$0';
-    document.getElementById('tax-amount').textContent = '$0';
-    document.getElementById('total-amount').textContent = '$0';
-    document.getElementById('modal-total').textContent = '$0';
+    document.getElementById('subtotal').textContent = '₹0';
+    document.getElementById('services-cost').textContent = '₹0';
+    document.getElementById('tax-amount').textContent = '₹0';
+    document.getElementById('total-amount').textContent = '₹0';
+    document.getElementById('modal-total').textContent = '₹0';
     bookingData = null;
 }
 
